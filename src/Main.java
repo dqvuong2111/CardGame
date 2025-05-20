@@ -39,12 +39,12 @@ public class Main {
             RuleSet currentRuleSet = game.getRuleSet(); 
             
             Player humanPlayer = new Player("Người chơi 1", false);
-            Player humanPlayer2 = new Player("Người chơi 2", false);
+            AIPlayer aiPlayer2 = new AIPlayer("Người chơi 2", AIStrategy.GREEDY, currentRuleSet);
             AIPlayer aiPlayer3 = new AIPlayer("Người chơi 3 (AI Tham lam)", AIStrategy.GREEDY, currentRuleSet);
             AIPlayer aiPlayer4 = new AIPlayer("Người chơi 4 (AI Thông minh)", AIStrategy.SMART, currentRuleSet);
 
             game.addPlayer(humanPlayer);
-            game.addPlayer(humanPlayer2);
+            game.addPlayer(aiPlayer2);
             game.addPlayer(aiPlayer3);
             game.addPlayer(aiPlayer4);
             

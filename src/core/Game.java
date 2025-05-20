@@ -54,6 +54,12 @@ public abstract class Game<R extends RuleSet> {
 		return ruleSet;
 	}
 
+	public int getCurrentPlayerIndex() {
+		return currentPlayerIndex;
+	}
+
+
+
 	protected GeneralGameState generalState; 
     
     public GeneralGameState getGeneralGameState() {

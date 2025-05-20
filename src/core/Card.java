@@ -43,7 +43,7 @@ public class Card implements Comparable<Card> {
 		return rankToString() + suitToString();
 	}
 	
-	private String suitToString() {
+	public String suitToString() {
 		return switch (suit) {
         case HEARTS -> "♥";
         case DIAMONDS -> "♦";

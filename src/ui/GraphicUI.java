@@ -349,19 +349,22 @@ public class GraphicUI extends CardGameGUI<TienLenGame> {
             g2d.setColor(suitColor);
 
             // Draw Rank
-            String rankStr = card.getRank().toString(); 
+            String rankStr;
+            if(card.getRank().getValue() == 15) rankStr = (card.getRank().getValue() - 13) + card.suitToString(); 
+            else
+            	rankStr = card.toString(); 
             g2d.setFont(new Font("Arial", Font.BOLD, 20));
             FontMetrics fm = g2d.getFontMetrics();
             int xRank = (getWidth() - fm.stringWidth(rankStr)) / 2;
-            int yRank = fm.getAscent() + 5;
+            int yRank = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
             g2d.drawString(rankStr, xRank, yRank);
 
-            // Draw Suit
-            g2d.setFont(new Font("Arial", Font.PLAIN, 24));
-            fm = g2d.getFontMetrics();
-            int xSuit = (getWidth() - fm.stringWidth(card.getSuit().toString())) / 2; // Approximate center
-            int ySuit = getHeight() - fm.getDescent() - 5;
-            g2d.drawString(card.getSuit().toString(), xSuit, ySuit);
+//            // Draw Suit
+//            g2d.setFont(new Font("Arial", Font.PLAIN, 24));
+//            fm = g2d.getFontMetrics();
+//            int xSuit = (getWidth() - fm.stringWidth(card.getSuit().toString())) / 2; // Approximate center
+//            int ySuit = getHeight() - fm.getDescent() - 5;
+//            g2d.drawString(card.getSuit().toString(), xSuit, ySuit);
         }
     }
 }
