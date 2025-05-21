@@ -7,22 +7,25 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert; // Import Alert
+import javafx.scene.control.Alert.AlertType; // Import AlertType
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType; // Import ButtonType
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Modality; // Import Modality
 import javafx.stage.Stage;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional; // Import Optional
 import java.util.stream.Collectors;
 
 public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
@@ -38,24 +41,21 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     private Button newGameButton;
 
     private List<Card> selectedCards = new ArrayList<>();
-    // private final Object playerInputLock = new Object(); // Không còn cần thiết lắm cho JavaFX input
     private volatile boolean waitingForInput = false;
-    // private List<Card> playerSelectedInput = null; // Không còn cần thiết lắm cho JavaFX input
 
     private Map<Player, VBox> playerPanels; // VBox cho TẤT CẢ players (AI và Human)
 
     public GraphicUIJavaFX(TienLenGame game, Stage primaryStage) {
-        super(game, primaryStage); // Truyền primaryStage lên lớp cha
-        // Setup scene và show stage trong constructor của GUI
-        Scene scene = new Scene(initGUI(), 1200, 800); // Kích thước mặc định, sẽ được maximized
+        super(game, primaryStage);
+        Scene scene = new Scene(initGUI(), 1200, 800);
         primaryStage.setScene(scene);
-        primaryStage.setMaximized(true); // Phóng to cửa sổ ngay lập tức
+        primaryStage.setMaximized(true);
     }
 
     @Override
     protected Parent initGUI() {
         System.out.println("initGUI started.");
-        playerPanels = new HashMap<>(); // Khởi tạo map
+        playerPanels = new HashMap<>();
         rootLayout = new BorderPane();
         rootLayout.setPadding(new Insets(20));
 
@@ -66,7 +66,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         messageBox.setAlignment(Pos.CENTER);
         messageBox.getChildren().add(messageLabel);
         rootLayout.setTop(messageBox);
-        BorderPane.setMargin(messageBox, new Insets(0, 0, 20, 0)); // Margin dưới
+        BorderPane.setMargin(messageBox, new Insets(0, 0, 20, 0));
 
         // --- Players Section (LEFT) ---
         VBox allPlayersInfoBox = new VBox(15);
@@ -82,12 +82,10 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         List<Player> players = game.getPlayers();
         System.out.println("Number of players found: " + players.size());
         
-        // Sắp xếp người chơi để người chơi human ở trên cùng hoặc cuối cùng trong list UI này nếu muốn
-        // Ví dụ: đưa human player lên đầu list để hiển thị trước
         players.sort((p1, p2) -> {
-            if (!p1.isAI() && p2.isAI()) return -1; // Human trước AI
-            if (p1.isAI() && !p2.isAI()) return 1; // AI sau Human
-            return p1.getName().compareTo(p2.getName()); // Sắp xếp theo tên nếu cùng loại
+            if (!p1.isAI() && p2.isAI()) return -1;
+            if (p1.isAI() && !p2.isAI()) return 1;
+            return p1.getName().compareTo(p2.getName());
         });
 
         for (Player p : players) {
@@ -103,14 +101,14 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
             if (p.isAI()) {
                 nameLabel = new Label(p.getName() + " (AI)");
             } else {
-                nameLabel = new Label(p.getName()); // Chỉ cần tên, không cần thêm "(Bạn)" ở đây vì nó sẽ hiển thị ở khu vực bài riêng.
+                nameLabel = new Label(p.getName());
             }
             nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
             Label cardsCountLabel = new Label("Bài: " + p.getHand().size());
             playerPanel.getChildren().addAll(nameLabel, cardsCountLabel);
 
-            playerPanels.put(p, playerPanel); // Thêm vào map
-            allPlayersInfoBox.getChildren().add(playerPanel); // Thêm vào VBox bên trái
+            playerPanels.put(p, playerPanel);
+            allPlayersInfoBox.getChildren().add(playerPanel);
             System.out.println("Added player panel for " + p.getName() + " to allPlayersInfoBox.");
         }
         
@@ -137,16 +135,15 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         BorderPane.setMargin(playedCardsContainer, new Insets(0, 0, 20, 0)); 
 
         // --- Player Hand Panel (BOTTOM) ---
-        // VBox này CHỈ chứa HBox cho bài của người chơi human và title của nó
         VBox humanHandDisplayContainer = new VBox(5); 
         humanHandDisplayContainer.setAlignment(Pos.CENTER);
         humanHandDisplayContainer.setPadding(new Insets(10));
         humanHandDisplayContainer.setStyle("-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f0f0ff;");
 
-        Label humanHandTitle = new Label("Bài của bạn"); // Tiêu đề chung cho khu vực bài của human player
+        Label humanHandTitle = new Label("Bài của bạn");
         humanHandTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         
-        playerHandBox = new HBox(5); // HBox thực tế chứa các CardView
+        playerHandBox = new HBox(5);
         playerHandBox.setAlignment(Pos.CENTER);
         playerHandBox.setPadding(new Insets(10, 0, 0, 0));
 
@@ -176,6 +173,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         newGameButton.setMaxWidth(Double.MAX_VALUE);
         newGameButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         newGameButton.setOnAction(event -> handleNewGameButton());
+        newGameButton.setDisable(true); // Vô hiệu hóa nút new game lúc đầu
 
         controlBox.getChildren().addAll(playButton, passButton, newGameButton);
         rootLayout.setRight(controlBox);
@@ -185,11 +183,8 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
     @Override
     public void displayPlayerHand(Player player) {
-        // Phương thức này bây giờ sẽ được gọi cho BẤT KỲ người chơi human nào đang đến lượt.
-        // Chỉ hiển thị bài của người chơi hiện tại nếu họ không phải AI.
-        // Điều kiện game.getCurrentPlayer() == player là quan trọng để không hiển thị bài của người khác.
         if (!player.isAI() && game.getCurrentPlayer() == player) {
-            playerHandBox.getChildren().clear(); // Clear HBox for cards
+            playerHandBox.getChildren().clear();
             List<Card> hand = new ArrayList<>(player.getHand());
             hand.sort(((TienLenGame) game).ruleSet.getCardComparator());
 
@@ -200,7 +195,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
                 }
 
                 cardView.setOnMouseClicked(event -> {
-                    // Kiểm tra nếu đây thực sự là lượt của người chơi human này
                     if (((TienLenGame) game).getCurrentState() == TienLenGame.GameState.WAITING_FOR_PLAYER_INPUT && game.getCurrentPlayer() == player) {
                         if (cardView.isSelected()) {
                             selectedCards.remove(card);
@@ -213,9 +207,9 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
                 playerHandBox.getChildren().add(cardView);
             }
         } else if (player.isAI()) {
-            // Không làm gì, bài AI chỉ hiện số lượng ở panel bên trái
+            // Nothing to do for AI hand display here
         } else {
-            // Nếu là human player nhưng KHÔNG phải lượt của họ, clear khu vực bài
+            // If it's a human player but not their turn, clear hand area
             playerHandBox.getChildren().clear();
             playerHandBox.getChildren().add(new Label("Đây không phải lượt của bạn."));
         }
@@ -229,7 +223,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     @Override
     public void updateGameState() {
         Platform.runLater(() -> {
-            // Cập nhật bài trên bàn
             playedCardsBox.getChildren().clear();
             List<Card> lastPlayed = game.getLastPlayedCards();
             if (lastPlayed != null && !lastPlayed.isEmpty()) {
@@ -241,50 +234,45 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
                 playedCardsBox.getChildren().add(new Label("Không có bài trên bàn."));
             }
 
-            // Cập nhật thông tin và highlight cho TẤT CẢ người chơi (human và AI)
             for (Player p : game.getPlayers()) {
                 VBox playerPanel = playerPanels.get(p);
                 if (playerPanel != null) {
-                    Label cardsCountLabel = (Label) playerPanel.getChildren().get(1); // Label thứ 2 là số bài
+                    Label cardsCountLabel = (Label) playerPanel.getChildren().get(1);
                     cardsCountLabel.setText("Bài: " + p.getHand().size());
 
                     Label nameLabel = (Label) playerPanel.getChildren().get(0);
 
                     if (game.getCurrentPlayer() == p) {
                         playerPanel.setStyle("-fx-border-color: blue; -fx-border-width: 3; -fx-border-radius: 5; -fx-background-color: #e0e0ff;");
-                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI) - Lượt!" : " (Bạn) - Lượt!")); // Hiển thị "(Bạn)" ở đây cho người chơi hiện tại
+                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI) - Lượt!" : " (Bạn) - Lượt!"));
                         nameLabel.setTextFill(Color.BLUE);
                     } else {
                         playerPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
-                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : "")); // Không thêm "(Bạn)" nếu không phải lượt, để gọn tên
+                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : ""));
                         nameLabel.setTextFill(Color.BLACK);
                     }
                 }
             }
 
-            // Cập nhật bài của người chơi human hiện tại (nếu có)
             Player currentPlayer = game.getCurrentPlayer();
             if (currentPlayer != null && !currentPlayer.isAI()) {
-                displayPlayerHand(currentPlayer); // Gọi displayPlayerHand với người chơi hiện tại
-                // Điều khiển nút bấm dựa trên trạng thái của người chơi human hiện tại
-                boolean isHumanTurn = (currentPlayer == game.getCurrentPlayer()); // Luôn là true ở đây
+                displayPlayerHand(currentPlayer);
+                boolean isHumanTurn = (currentPlayer == game.getCurrentPlayer());
                 boolean isWaitingForInputState = (((TienLenGame) game).getCurrentState() == TienLenGame.GameState.WAITING_FOR_PLAYER_INPUT);
 
                 playButton.setDisable(!(isHumanTurn && isWaitingForInputState));
                 passButton.setDisable(!(isHumanTurn && isWaitingForInputState && game.canPass(currentPlayer)));
                 
-                // Nút New Game chỉ enable khi game kết thúc
                 newGameButton.setDisable(!(game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER));
 
                 waitingForInput = (isHumanTurn && isWaitingForInputState);
             } else {
-                // Nếu không phải lượt của người chơi human, disable các nút và clear khu vực bài
                 playButton.setDisable(true);
                 passButton.setDisable(true);
-                 newGameButton.setDisable(!(game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER));
+                newGameButton.setDisable(!(game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER));
                 playerHandBox.getChildren().clear();
-                playerHandBox.getChildren().add(new Label("Chờ lượt của bạn...")); // Thông báo cho người chơi chờ
-                selectedCards.clear(); // Xóa lựa chọn nếu không phải lượt của mình
+                playerHandBox.getChildren().add(new Label("Chờ lượt của bạn..."));
+                selectedCards.clear();
                 waitingForInput = false;
             }
         });
@@ -293,7 +281,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     private void handlePlayButton() {
         if (waitingForInput) {
             TienLenGame tienLenGame = (TienLenGame) game;
-            // Đảm bảo chỉ người chơi hiện tại mới được đánh bài
             Player currentPlayer = game.getCurrentPlayer();
             if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.isValidPlay(selectedCards)) {
                 tienLenGame.setPlayerInput(new ArrayList<>(selectedCards));
@@ -308,7 +295,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     private void handlePassButton() {
         if (waitingForInput) {
             TienLenGame tienLenGame = (TienLenGame) game;
-            // Đảm bảo chỉ người chơi hiện tại mới được bỏ lượt
             Player currentPlayer = game.getCurrentPlayer();
             if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.canPass(currentPlayer)) {
                 tienLenGame.setPlayerInput(new ArrayList<>()); // Empty list for pass
@@ -321,27 +307,80 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     }
 
     private void handleNewGameButton() {
+        // Reset game state
         game.resetGame();
-        // Cần khởi tạo lại game để chia bài mới
-        // Hoặc bạn có thể thêm logic reset trong TienLenGame để nó tự reset bài và trạng thái
-        // Ví dụ: game.resetGame(); // Nếu bạn có phương thức này trong Game/TienLenGame
-        // Để đơn giản, nếu bạn chỉ muốn chơi lại, bạn có thể khởi tạo lại game và GUI ở Main
-        // hoặc thêm logic reset chi tiết trong TienLenGame
-        
-        // Hiện tại, nếu game.resetGame() chỉ reset trạng thái game mà chưa chia bài mới:
-        // Bạn cần gọi game.dealCards() sau khi reset
         game.dealCards(); // Chia bài lại
-        updateGameState(); // Cập nhật GUI cho ván mới
-        showMessage("Game mới đã bắt đầu!");
+        
+        // Reset UI components
+        selectedCards.clear();
+        playerHandBox.getChildren().clear();
+        playedCardsBox.getChildren().clear();
+        messageLabel.setText("Chào mừng bạn đến với Tiến Lên Miền Nam!");
+        
+        // Disable buttons until human player's turn
+        playButton.setDisable(true);
+        passButton.setDisable(true);
+        newGameButton.setDisable(true); // Disable new game button until next game over
+
+        // Update player panels (clear highlights, update card counts)
+        updateGameState(); 
+        
+        // Start game loop again
+        game.startGameLoop();
+    }
+
+    @Override
+    public void onGameOver(List<Player> winners) {
+        StringBuilder sb = new StringBuilder("GAME KẾT THÚC!\n");
+        if (winners.isEmpty()) {
+            sb.append("Không ai thắng (có thể do lỗi).\n");
+        } else {
+            sb.append("Thứ hạng:\n");
+            for (int i = 0; i < winners.size(); i++) {
+                Player p = winners.get(i);
+                sb.append(p.getWinnerRank()).append(". ").append(p.getName());
+                if (p.getWinnerRank() > 0) { // Chỉ hiển thị rank nếu có
+                    sb.append(" (Hạng: ").append(p.getWinnerRank()).append(")");
+                }
+                sb.append("\n");
+            }
+        }
+        
+        // Hiển thị dialog chiến thắng
+        Platform.runLater(() -> {
+            Alert alert = new Alert(AlertType.INFORMATION);
+            alert.setTitle("Game Kết Thúc");
+            alert.setHeaderText("Kết quả ván đấu:");
+            alert.setContentText(sb.toString());
+
+            // Thêm nút "Chơi lại" và "Thoát"
+            ButtonType playAgainButton = new ButtonType("Chơi lại");
+            ButtonType exitButton = new ButtonType("Thoát");
+            alert.getButtonTypes().setAll(playAgainButton, exitButton);
+
+            // Đặt cửa sổ dialog là cửa sổ con của cửa sổ chính
+            alert.initOwner(primaryStage); // primaryStage là Stage của ứng dụng
+            alert.initModality(Modality.APPLICATION_MODAL); // Chặn tương tác với cửa sổ chính
+
+            Optional<ButtonType> result = alert.showAndWait();
+
+            if (result.isPresent() && result.get() == playAgainButton) {
+                handleNewGameButton(); // Gọi lại phương thức xử lý chơi mới
+            } else {
+                Platform.exit(); // Thoát ứng dụng nếu người dùng chọn Thoát hoặc đóng dialog
+            }
+        });
+        
+        // Cần cập nhật trạng thái game và UI sau khi game kết thúc
+        updateGameState(); 
     }
 
     @Override
     public List<Card> getPlayerCardSelection(Player player) {
-        // This method is likely for console UI or specific input logic,
-        // for JavaFX the selection is handled via mouse clicks on CardView.
         return null;
     }
 
+    // CardView class remains the same
     class CardView extends StackPane {
         private Card card;
         private boolean selected;
@@ -359,20 +398,19 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
             backgroundRect.setArcHeight(10);
 
             String rankStr;
-            // Xử lý hiển thị giá trị 15 (Quân 2) đúng trong Tiến Lên
-            if(card.getRank().getValue() == 15) { // Rank 15 là quân 2
-                rankStr = "2" + card.suitToString(); // Hiển thị "2" + chất
-            } else if (card.getRank().getValue() == 14) { // Rank 14 là quân A
+            if(card.getRank().getValue() == 15) {
+                rankStr = "2" + card.suitToString();
+            } else if (card.getRank().getValue() == 14) {
                 rankStr = "A" + card.suitToString();
-            } else if (card.getRank().getValue() == 13) { // Rank 13 là quân K
+            } else if (card.getRank().getValue() == 13) {
                 rankStr = "K" + card.suitToString();
-            } else if (card.getRank().getValue() == 12) { // Rank 12 là quân Q
+            } else if (card.getRank().getValue() == 12) {
                 rankStr = "Q" + card.suitToString();
-            } else if (card.getRank().getValue() == 11) { // Rank 11 là quân J
+            } else if (card.getRank().getValue() == 11) {
                 rankStr = "J" + card.suitToString();
             }
             else {
-                rankStr = card.getRank().getValue() + card.suitToString(); // Các quân bài số
+                rankStr = card.getRank().getValue() + card.suitToString();
             }
 
             cardLabel = new Label(rankStr);
