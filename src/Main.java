@@ -29,12 +29,12 @@ public class Main extends Application {
         // Thêm người chơi vào game SAU KHI game đã được khởi tạo
         RuleSet currentRuleSet = game.getRuleSet();
         Player humanPlayer = new Player("Người chơi 1", false);
-        AIPlayer aiPlayer2 = new AIPlayer("(AI đơn giản)", AIPlayer.AIStrategy.GREEDY, currentRuleSet);
+        Player humanPlayer2 = new Player("Người chơi 2", false);
         AIPlayer aiPlayer3 = new AIPlayer("(AI Tham lam)", AIStrategy.GREEDY, currentRuleSet);
         AIPlayer aiPlayer4 = new AIPlayer("(AI Thông minh)", AIStrategy.SMART, currentRuleSet);
 
         game.addPlayer(humanPlayer);
-        game.addPlayer(aiPlayer2);
+        game.addPlayer(humanPlayer2);
         game.addPlayer(aiPlayer3);
         game.addPlayer(aiPlayer4);
         
@@ -50,6 +50,10 @@ public class Main extends Application {
 
         // Khởi động vòng lặp game trong một thread riêng để không chặn JavaFX Application Thread
         game.dealCards();
+        System.out.println("Bai Player 1:" +  humanPlayer.getHand().size());
+        System.out.println("Bai Player 2:" +  humanPlayer2.getHand().size());
+        System.out.println("Bai AI3:" +  aiPlayer3.getHand().size());
+        System.out.println("Bai AI4:" +  aiPlayer3.getHand().size());
         gui.updateGameState();
         game.setGeneralGameState(Game.GeneralGameState.RUNNING);
         game.startGameLoop();
