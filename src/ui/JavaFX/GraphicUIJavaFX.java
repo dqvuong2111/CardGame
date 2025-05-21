@@ -21,10 +21,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
-    private BorderPane rootLayout; // Sử dụng BorderPane làm root
+    private BorderPane rootLayout;
     private VBox messageBox;
     private Label messageLabel;
     private HBox playedCardsBox;
@@ -35,21 +36,23 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     private Button newGameButton;
 
     private List<Card> selectedCards = new ArrayList<>();
-    private final Object playerInputLock = new Object(); // Giữ nguyên lock
+    private final Object playerInputLock = new Object();
     private volatile boolean waitingForInput = false;
     private List<Card> playerSelectedInput = null;
 
-    private Map<Player, VBox> playerPanels = new HashMap<>(); // VBox cho AI players
+    private Map<Player, VBox> playerPanels; // VBox cho AI players
 
     public GraphicUIJavaFX(TienLenGame game, Stage primaryStage) {
         super(game, primaryStage);
-        primaryStage.setMaximized(true); // Tối ưu kích thước màn hình
+        primaryStage.setMaximized(true); // Đảm bảo cửa sổ được phóng to
     }
 
     @Override
     protected Parent initGUI() {
-        rootLayout = new BorderPane();
-        rootLayout.setPadding(new Insets(20)); // Padding cho toàn bộ layout
+    	System.out.println("initGUI started.");
+    	playerPanels = new HashMap<>();
+    	rootLayout = new BorderPane();
+        rootLayout.setPadding(new Insets(20));
 
         // --- Message Panel (TOP) ---
         messageBox = new VBox();
@@ -60,57 +63,70 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         rootLayout.setTop(messageBox);
         BorderPane.setMargin(messageBox, new Insets(0, 0, 20, 0)); // Margin dưới
 
-        // --- Main Game Content (CENTER) ---
-        // Thay vì BorderPane centerPanel, dùng VBox để nhóm Played Cards và AI Players
-        VBox mainGameContentBox = new VBox(20); // VBox với spacing 20 giữa các phần
-        mainGameContentBox.setAlignment(Pos.CENTER); // Căn giữa nội dung trong VBox
-        mainGameContentBox.setPadding(new Insets(20)); // Padding cho mainGameContentBox
-        mainGameContentBox.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #f0f0f0;"); // Border cho mainGameContentBox
+        // --- AI Players Section (LEFT) ---
+        VBox aiPlayersBox = new VBox(15); // VBox cho AI players với spacing 15
+        aiPlayersBox.setPadding(new Insets(10));
+        aiPlayersBox.setAlignment(Pos.TOP_CENTER); // Căn giữa các AI panel theo chiều ngang trong VBox
+        aiPlayersBox.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #f0f0f0;");
+        
+        // ĐẶT CHIỀU RỘNG ƯU TIÊN VÀ TỐI THIỂU CHO AI PLAYERS BOX
+        aiPlayersBox.setPrefWidth(200); 
+        aiPlayersBox.setMinWidth(180); // Thêm minWidth để đảm bảo không bị co lại quá nhỏ
+        aiPlayersBox.setMaxWidth(250); 
+        System.out.println("aiPlayersBox created.");
+        
+        List<Player> players = game.getPlayers();
+        // Bỏ qua người chơi là người (human player) khỏi danh sách AI
+        List<Player> aiPlayers = players.stream()
+                                       .filter(Player::isAI)
+                                       .collect(Collectors.toList());
+        System.out.println("Number of AI players found: " + aiPlayers.size());
+        
+        for (Player p : aiPlayers) {
+        	System.out.println("Creating panel for AI: " + p.getName());
+            VBox aiPanel = new VBox(5);
+            aiPanel.setPadding(new Insets(10));
+            aiPanel.setAlignment(Pos.CENTER);
+            aiPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
+            
+            // Đặt chiều rộng ưu tiên cho từng AI panel
+            aiPanel.setPrefWidth(180); // Ví dụ, nhỏ hơn một chút so với aiPlayersBox
+            aiPanel.setMinWidth(150); 
+            
+            Label aiNameLabel = new Label(p.getName() + " (AI)");
+            aiNameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            Label aiCardsCountLabel = new Label("Bài: " + p.getHand().size());
+            aiPanel.getChildren().addAll(aiNameLabel, aiCardsCountLabel);
 
-        // Played Cards Section
-        playedCardsBox = new HBox(5); // HBox với spacing 5
+            playerPanels.put(p, aiPanel);
+            aiPlayersBox.getChildren().add(aiPanel);
+            System.out.println("Added AI panel for " + p.getName() + " to aiPlayersBox.");
+        }
+        rootLayout.setLeft(aiPlayersBox);
+        System.out.println("aiPlayersBox set to LEFT.");
+        BorderPane.setMargin(aiPlayersBox, new Insets(0, 20, 0, 0)); // Margin phải để tạo khoảng trống
+
+        // --- Played Cards Section (CENTER) ---
+        VBox playedCardsContainer = new VBox(5);
+        playedCardsContainer.setAlignment(Pos.CENTER);
+        playedCardsContainer.setPadding(new Insets(20));
+        playedCardsContainer.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #f0f0f0;");
+        
+        Label playedCardsTitle = new Label("Bài trên bàn");
+        playedCardsTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        
+        playedCardsBox = new HBox(5);
         playedCardsBox.setAlignment(Pos.CENTER);
         playedCardsBox.setPadding(new Insets(10));
         playedCardsBox.setStyle("-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #e0e0e0;");
-        Label playedCardsTitle = new Label("Bài trên bàn");
-        playedCardsTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        VBox playedCardsContainer = new VBox(5, playedCardsTitle, playedCardsBox);
-        playedCardsContainer.setAlignment(Pos.CENTER);
-        // Thêm vào mainGameContentBox thay vì centerPanel
-        mainGameContentBox.getChildren().add(playedCardsContainer);
-
-        // AI Players Section
-        HBox aiPlayersBox = new HBox(20); // HBox cho AI players với spacing 20
-        aiPlayersBox.setPadding(new Insets(10));
-        aiPlayersBox.setAlignment(Pos.CENTER);
-
-        List<Player> players = game.getPlayers();
-        for (int i = 0; i < players.size(); i++) {
-            Player p = players.get(i);
-            if (p.isAI()) {
-                VBox aiPanel = new VBox(5); // VBox cho mỗi AI (tên, số bài)
-                aiPanel.setPadding(new Insets(10));
-                aiPanel.setAlignment(Pos.CENTER);
-                aiPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
-                
-                Label aiNameLabel = new Label(p.getName() + " (AI)");
-                aiNameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-                Label aiCardsCountLabel = new Label("Bài: " + p.getHand().size()); // Placeholder
-                aiPanel.getChildren().addAll(aiNameLabel, aiCardsCountLabel);
-
-                playerPanels.put(p, aiPanel); // Store reference
-                aiPlayersBox.getChildren().add(aiPanel);
-            }
-        }
-        // Thêm vào mainGameContentBox thay vì centerPanel
-        mainGameContentBox.getChildren().add(aiPlayersBox);
-
-        // Đặt mainGameContentBox vào CENTER của rootLayout
-        rootLayout.setCenter(mainGameContentBox);
-        BorderPane.setMargin(mainGameContentBox, new Insets(0, 0, 20, 0));
+        
+        playedCardsContainer.getChildren().addAll(playedCardsTitle, playedCardsBox);
+        rootLayout.setCenter(playedCardsContainer);
+        // Margin trên và dưới cho center content
+        BorderPane.setMargin(playedCardsContainer, new Insets(0, 0, 20, 0)); 
 
         // --- Player Hand Panel (BOTTOM) ---
-        playerHandBox = new HBox(5); // HBox với spacing 5
+        playerHandBox = new HBox(5);
         playerHandBox.setAlignment(Pos.CENTER);
         playerHandBox.setPadding(new Insets(10));
         playerHandBox.setStyle("-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f0f0ff;");
@@ -121,13 +137,17 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         rootLayout.setBottom(playerHandContainer);
 
         // --- Control Panel (RIGHT) ---
-        controlBox = new VBox(20); // VBox với spacing 20
+        controlBox = new VBox(20);
         controlBox.setAlignment(Pos.CENTER);
         controlBox.setPadding(new Insets(20, 10, 20, 10));
         controlBox.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #e8e8e8;");
 
+        // ĐẶT CHIỀU RỘNG ƯU TIÊN CHO CONTROL BOX
+        controlBox.setPrefWidth(150); // Ví dụ: đặt chiều rộng ưu tiên là 150px
+        controlBox.setMaxWidth(180); // Có thể đặt chiều rộng tối đa
+
         playButton = new Button("Đánh bài");
-        playButton.setMaxWidth(Double.MAX_VALUE); // Choán hết chiều rộng
+        playButton.setMaxWidth(Double.MAX_VALUE);
         playButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         playButton.setOnAction(event -> handlePlayButton());
 
@@ -143,13 +163,13 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
         controlBox.getChildren().addAll(playButton, passButton, newGameButton);
         rootLayout.setRight(controlBox);
-
+        System.out.println("initGUI finished. RootLayout has " + rootLayout.getChildren().size() + " children.");
         return rootLayout;
     }
 
-    // Các phương thức khác (handlePlayButton, handlePassButton, handleNewGameButton, displayPlayerHand, showMessage, updateGameState, getPlayerCardSelection, CardView class) giữ nguyên.
-    // LƯU Ý: Phần `updateGameState()` của bạn đã có logic cập nhật số bài của AI (`aiCardsCountLabel.setText("Bài: " + p.getHand().size());`).
-    // Logic này vẫn hoạt động đúng sau thay đổi layout.
+    // Các phương thức handlePlayButton, handlePassButton, handleNewGameButton, displayPlayerHand, showMessage, updateGameState, getPlayerCardSelection, CardView class giữ nguyên.
+    // Logic trong updateGameState để cập nhật số bài của AI vẫn hoạt động đúng vì nó truy cập playerPanels.
+    // LƯU Ý: Phần CardView class đã được cung cấp trong các phản hồi trước, đảm bảo nó vẫn nằm trong GraphicUIJavaFX.java.
 
     private void handlePlayButton() {
         if (waitingForInput) {
@@ -189,7 +209,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         hand.sort(((TienLenGame) game).ruleSet.getCardComparator());
 
         for (Card card : hand) {
-            CardView cardView = new CardView(card); // Sử dụng CardView JavaFX
+            CardView cardView = new CardView(card);
             if (selectedCards.contains(card)) {
                 cardView.setSelected(true);
             }
@@ -248,11 +268,9 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
                 if (p.isAI()) {
                     VBox aiPanel = playerPanels.get(p);
                     if (aiPanel != null) {
-                        // Cập nhật số lượng bài của AI
-                        Label aiCardsCountLabel = (Label) aiPanel.getChildren().get(1); // Lấy Label thứ 2 (chứa số bài)
+                        Label aiCardsCountLabel = (Label) aiPanel.getChildren().get(1);
                         aiCardsCountLabel.setText("Bài: " + p.getHand().size());
 
-                        // Highlight AI hiện tại
                         if (game.getCurrentPlayer() == p) {
                             aiPanel.setStyle("-fx-border-color: blue; -fx-border-width: 3; -fx-border-radius: 5; -fx-background-color: #e0e0ff;");
                             Label aiNameLabel = (Label) aiPanel.getChildren().get(0);
@@ -285,11 +303,9 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
     @Override
     public List<Card> getPlayerCardSelection(Player player) {
-        // Phương thức này không còn được sử dụng trực tiếp để chờ input
         return null;
     }
 
-    // Lớp CardView để hiển thị từng lá bài trong JavaFX
     class CardView extends StackPane {
         private Card card;
         private boolean selected;
@@ -300,14 +316,12 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
             this.card = card;
             this.selected = false;
             
-            // Background của lá bài
             backgroundRect = new Rectangle(80, 110);
             backgroundRect.setFill(Color.WHITE);
             backgroundRect.setStroke(Color.BLACK);
             backgroundRect.setArcWidth(10);
             backgroundRect.setArcHeight(10);
 
-            // Text của lá bài
             String rankStr;
             if(card.getRank().getValue() == 15) rankStr = (card.getRank().getValue() - 13) + card.suitToString();
             else
@@ -320,7 +334,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
             getChildren().addAll(backgroundRect, cardLabel);
 
-            // Tùy chỉnh border khi được chọn
             updateSelectionBorder();
         }
 
@@ -337,7 +350,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
             if (selected) {
                 backgroundRect.setStroke(Color.BLUE);
                 backgroundRect.setStrokeWidth(3);
-                backgroundRect.setFill(new Color(0, 0, 1, 0.2)); // Semi-transparent blue
+                backgroundRect.setFill(new Color(0, 0, 1, 0.2));
             } else {
                 backgroundRect.setStroke(Color.BLACK);
                 backgroundRect.setStrokeWidth(1);

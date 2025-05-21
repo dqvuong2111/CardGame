@@ -25,10 +25,7 @@ public class Main extends Application {
         List<Player> players = new ArrayList<>(); // Khởi tạo danh sách người chơi RỖNG
 
         game = new TienLenGame(players, tienLenRule);
-
-        // Khởi tạo GUI JavaFX
-        gui = new GraphicUIJavaFX(game, primaryStage); // Truyền primaryStage vào GUI
-
+        
         // Thêm người chơi vào game SAU KHI game đã được khởi tạo
         RuleSet currentRuleSet = game.getRuleSet();
         Player humanPlayer = new Player("Người chơi 1", false);
@@ -40,6 +37,10 @@ public class Main extends Application {
         game.addPlayer(aiPlayer2);
         game.addPlayer(aiPlayer3);
         game.addPlayer(aiPlayer4);
+        
+        // Khởi tạo GUI JavaFX
+        gui = new GraphicUIJavaFX(game, primaryStage); // Truyền primaryStage vào GUI
+
 
         // Thiết lập title cho Stage
         primaryStage.setTitle(game.getName());
