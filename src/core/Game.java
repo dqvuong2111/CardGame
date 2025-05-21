@@ -1,12 +1,12 @@
 // core/Game.java
 package core;
 
-import ui.CardGameGUI; 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import javax.swing.SwingUtilities; 
+import javax.swing.SwingUtilities;
+
+import ui.Swing.CardGameGUI; 
 
 public abstract class Game<R extends RuleSet> {
     protected String name;

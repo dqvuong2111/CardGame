@@ -1,5 +1,5 @@
 // ui/CardGameGUI.java
-package ui;
+package ui.Swing;
 
 import core.Game;
 import core.Player;

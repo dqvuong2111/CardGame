@@ -204,6 +204,12 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
                     }
                 }
             } else {
+            	 try {
+                     TimeUnit.SECONDS.sleep(AI_DELAY_SECONDS); // AI "suy nghĩ"
+                 } catch (InterruptedException e) {
+                     Thread.currentThread().interrupt();
+                     notifyMessageReceived("AI bị gián đoạn.");
+                 }
                 // Logic cho người chơi
                 currentState = GameState.WAITING_FOR_PLAYER_INPUT;
                 waitingForHumanInput = true;

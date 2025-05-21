@@ -1,64 +1,60 @@
-// Main.java
-import core.Game;
-import core.Player;
-import core.RuleSet;
-import core.AIPlayer;
+// Main.java (for JavaFX)
+import core.*;
 import core.AIPlayer.AIStrategy;
-import core.Card;
-import core.rules.TienLenGame; // Import TienLenGame
-import core.rules.TienLenRule; // Import TienLenRule
-import ui.CardGameGUI; // Import lớp trừu tượng CardGameGUI
-import ui.GraphicUI; // Import GraphicUI
+import core.rules.TienLenGame;
+import core.rules.TienLenRule;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Stage;
+import ui.JavaFX.GraphicUIJavaFX;
+import javafx.scene.Scene; // Import Scene
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.SwingUtilities;
-import javax.swing.JFrame; // Cần import JFrame
-import java.lang.Thread;
-import java.util.concurrent.TimeUnit;
 
-public class Main {
+// Main lớp sẽ extends Application
+public class Main extends Application {
+
+    private TienLenGame game; // Giữ tham chiếu đến game
+    private GraphicUIJavaFX gui; // Giữ tham chiếu đến GUI JavaFX
+
+    @Override
+    public void start(Stage primaryStage) {
+        // --- CHỌN GAME Ở ĐÂY ---
+        TienLenRule tienLenRule = new TienLenRule();
+        List<Player> players = new ArrayList<>(); // Khởi tạo danh sách người chơi RỖNG
+
+        game = new TienLenGame(players, tienLenRule);
+
+        // Khởi tạo GUI JavaFX
+        gui = new GraphicUIJavaFX(game, primaryStage); // Truyền primaryStage vào GUI
+
+        // Thêm người chơi vào game SAU KHI game đã được khởi tạo
+        RuleSet currentRuleSet = game.getRuleSet();
+        Player humanPlayer = new Player("Người chơi 1", false);
+        AIPlayer aiPlayer2 = new AIPlayer("(AI đơn giản)", AIPlayer.AIStrategy.GREEDY, currentRuleSet);
+        AIPlayer aiPlayer3 = new AIPlayer("(AI Tham lam)", AIStrategy.GREEDY, currentRuleSet);
+        AIPlayer aiPlayer4 = new AIPlayer("(AI Thông minh)", AIStrategy.SMART, currentRuleSet);
+
+        game.addPlayer(humanPlayer);
+        game.addPlayer(aiPlayer2);
+        game.addPlayer(aiPlayer3);
+        game.addPlayer(aiPlayer4);
+
+        // Thiết lập title cho Stage
+        primaryStage.setTitle(game.getName());
+
+        // Hiển thị Stage
+        primaryStage.show();
+
+        // Khởi động vòng lặp game trong một thread riêng để không chặn JavaFX Application Thread
+        game.dealCards();
+        gui.updateGameState();
+        game.setGeneralGameState(Game.GeneralGameState.RUNNING);
+        game.startGameLoop();
+    }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            // --- CHỌN GAME Ở ĐÂY ---
-            // Khởi tạo RuleSet trước
-            TienLenRule tienLenRule = new TienLenRule();
-            
-            // Khởi tạo danh sách người chơi RỖNG trước
-            List<Player> players = new ArrayList<>();
-
-            // Khởi tạo game Tiến Lên với danh sách người chơi và RuleSet
-            TienLenGame game = new TienLenGame(players, tienLenRule); 
-
-            // Sử dụng kiểu cụ thể cho CardGameGUI để đảm bảo an toàn kiểu
-            CardGameGUI<TienLenGame> gui = new GraphicUI(game);
-
-            // Thêm người chơi vào game SAU KHI game đã được khởi tạo
-            // RuleSet của game cần được truyền cho AIPlayer
-            RuleSet currentRuleSet = game.getRuleSet(); 
-            
-            Player humanPlayer = new Player("Người chơi 1", false);
-            AIPlayer aiPlayer2 = new AIPlayer("Người chơi 2", AIStrategy.GREEDY, currentRuleSet);
-            AIPlayer aiPlayer3 = new AIPlayer("Người chơi 3 (AI Tham lam)", AIStrategy.GREEDY, currentRuleSet);
-            AIPlayer aiPlayer4 = new AIPlayer("Người chơi 4 (AI Thông minh)", AIStrategy.SMART, currentRuleSet);
-
-            game.addPlayer(humanPlayer);
-            game.addPlayer(aiPlayer2);
-            game.addPlayer(aiPlayer3);
-            game.addPlayer(aiPlayer4);
-            
-            gui.setTitle(game.getName()); // Sử dụng tên game từ instance
-            gui.setSize(1200, 800); 
-            gui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            gui.setVisible(true);
-            gui.setLocationRelativeTo(null);
-
-            // Khởi động vòng lặp game trong một thread riêng để không chặn EDT (Event Dispatch Thread)
-            // Đặt generalState thành RUNNING trước khi bắt đầu gameThread
-            game.dealCards(); // Thêm dòng này để chia bài và tìm người đi đầu
-            game.setGeneralGameState(Game.GeneralGameState.RUNNING); // Đặt trạng thái game thành RUNNING
-            game.startGameLoop(); // Bắt đầu vòng lặp game
-        });
+        launch(args); // Khởi chạy ứng dụng JavaFX
     }
 }

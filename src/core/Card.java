@@ -52,12 +52,13 @@ public class Card implements Comparable<Card> {
 		};
 	}
 	
-	private String rankToString() {
+	public String rankToString() {
 		return switch(rank) {
 		case JACK -> "J";
 		case QUEEN -> "Q";
 		case KING -> "K";
 		case ACE -> "A";
+		case TWO -> "2";
 		default -> String.valueOf(rank.getValue());
 		};
 	}

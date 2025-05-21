@@ -1,8 +1,8 @@
-package ui;
+package ui.Swing;
 
 import core.*;
 import core.rules.TienLenGame;
-import core.rules.TienLenRule; 
+import core.rules.TienLenRule;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -47,16 +47,18 @@ public class GraphicUI extends CardGameGUI<TienLenGame> {
     protected void initGUI() {
         setTitle("Tiến Lên Miền Nam");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 800);
-        setLayout(new BorderLayout());
+        // setSize(1200, 800);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setLayout(new BorderLayout(10, 10));
 
-        // --- Message Panel (North) ---
-        JPanel messagePanel = new JPanel();
-        messageLabel = new JLabel("Chào mừng bạn đến với Tiến Lên Miền Nam!");
+        // --- TOP PANEL: Messages and Game Info ---
+        JPanel topPanel = new JPanel(new BorderLayout());
+        messageLabel = new JLabel("Bắt đầu trò chơi!", SwingConstants.CENTER);
         messageLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        messagePanel.add(messageLabel);
-        add(messagePanel, BorderLayout.NORTH);
-
+        messageLabel.setForeground(Color.BLUE);
+        topPanel.add(messageLabel, BorderLayout.CENTER);
+        add(topPanel, BorderLayout.NORTH);
+        
         // --- Center Panel (for played cards and AI hands) ---
         centerPanel = new JPanel(new BorderLayout(10, 10)); // Use BorderLayout for playedCardsPanel in center
         centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -359,12 +361,6 @@ public class GraphicUI extends CardGameGUI<TienLenGame> {
             int yRank = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
             g2d.drawString(rankStr, xRank, yRank);
 
-//            // Draw Suit
-//            g2d.setFont(new Font("Arial", Font.PLAIN, 24));
-//            fm = g2d.getFontMetrics();
-//            int xSuit = (getWidth() - fm.stringWidth(card.getSuit().toString())) / 2; // Approximate center
-//            int ySuit = getHeight() - fm.getDescent() - 5;
-//            g2d.drawString(card.getSuit().toString(), xSuit, ySuit);
         }
     }
 }
