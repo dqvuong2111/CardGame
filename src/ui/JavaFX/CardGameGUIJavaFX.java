@@ -5,29 +5,24 @@ import core.Game;
 import core.Player;
 import core.Card;
 import javafx.application.Platform;
-import javafx.scene.Parent; // Root node trong JavaFX
-import javafx.scene.*;
-import javafx.stage.Stage;   // Cần Stage để quản lý cửa sổ
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 import java.util.List;
 import java.util.ArrayList;
 
 public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameEventListener {
     protected T game;
-    protected Stage primaryStage; // Reference to the primary stage
-    protected Parent root; // The root node of the UI scene
+    protected Stage primaryStage;
+    protected Parent root;
+    protected Scene currentScene;
 
     public CardGameGUIJavaFX(T game, Stage primaryStage) {
-        this.game = game;
+    	this.game = game;
         this.primaryStage = primaryStage;
         this.game.addGameEventListener(this);
-        // initGUI sẽ trả về root node của Scene
-        this.root = initGUI();
-        // Tạo Scene và đặt vào Stage
-        Scene scene = new Scene(root, 1200, 800); // Kích thước ban đầu, sẽ được MAXIMIZED
-        primaryStage.setScene(scene);
     }
 
-    // Phương thức trừu tượng này sẽ trả về root node của giao diện
     protected abstract Parent initGUI();
     public abstract void displayPlayerHand(Player player);
     public abstract void showMessage(String message);
@@ -36,7 +31,6 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
 
     @Override
     public void onGameStateUpdated() {
-        // Luôn chạy trên JavaFX Application Thread
         Platform.runLater(this::updateGameState);
     }
 
@@ -103,8 +97,6 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
                 }
             }
             showMessage(sb.toString());
-            // Enable New Game button here
-            // Bạn sẽ cần truy cập newGameButton từ GraphicUIJavaFX
         });
     }
 }

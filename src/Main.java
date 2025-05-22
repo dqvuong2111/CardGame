@@ -1,80 +1,50 @@
 // Main.java
-import core.*;
-import core.AIPlayer.AIStrategy;
-import core.rules.TienLenGame;
-import core.rules.TienLenRule;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
-import ui.JavaFX.GraphicUIJavaFX;
-import javafx.scene.Scene; 
-
-import java.util.ArrayList;
-import java.util.List;
+import ui.JavaFX.SceneManager; // Import SceneManager
 
 public class Main extends Application {
 
-    private TienLenGame game; 
-    private GraphicUIJavaFX gui; 
+    private SceneManager sceneManager; // Sử dụng SceneManager để quản lý các scene
 
-    public static volatile boolean isShuttingDown = false; 
+    public static volatile boolean isShuttingDown = false;
 
     @Override
     public void start(Stage primaryStage) {
-        TienLenRule tienLenRule = new TienLenRule();
-        List<Player> players = new ArrayList<>(); 
+        // Khởi tạo SceneManager
+        sceneManager = new SceneManager(primaryStage);
 
-        game = new TienLenGame(players, tienLenRule);
-        
-        Player humanPlayer1 = new Player("Người chơi 1", false);
-        Player humanPlayer2 = new Player("Người chơi 2", false);
-        Player aiPlayer3 = new AIPlayer("AI 3", AIPlayer.AIStrategy.SMART, tienLenRule);
-        Player aiPlayer4 = new AIPlayer("AI 4", AIPlayer.AIStrategy.SMART, tienLenRule);
-
-        game.addPlayer(humanPlayer1);
-        game.addPlayer(humanPlayer2);
-        game.addPlayer(aiPlayer3);
-        game.addPlayer(aiPlayer4);
-        
-        gui = new GraphicUIJavaFX(game, primaryStage); // GUI được khởi tạo và tự đăng ký làm listener
-
-        primaryStage.setTitle("Tiến Lên Miền Nam");
-        
+        // Đặt xử lý khi đóng cửa sổ
         primaryStage.setOnCloseRequest(event -> {
-            System.out.println("Window closing request received. Terminating game thread and application.");
-            event.consume(); 
-            
-            Main.isShuttingDown = true; 
-            
-            if (game != null) {
-                System.out.println("Yêu cầu dừng game loop...");
-                // Gỡ bỏ GUI khỏi danh sách người nghe sự kiện của game ngay lập tức
-                game.removeGameEventListener(gui); // THAY ĐỔI MỚI TẠI ĐÂY
-                game.stopGameLoop(); 
+            System.out.println("Window closing request received. Terminating application.");
+            event.consume(); // Ngăn chặn việc đóng cửa sổ mặc định
+            Main.isShuttingDown = true;
+
+            // Yêu cầu SceneManager dừng game nếu có game đang chạy
+            if (sceneManager != null) {
+                sceneManager.stopCurrentGame(); // Thêm phương thức này vào SceneManager
             }
 
-            Platform.exit();
+            Platform.exit(); // Thoát ứng dụng JavaFX
+            System.exit(0); // Đảm bảo tất cả các thread đều dừng
         });
-        
-        primaryStage.show();
 
-        game.dealCards();
-        gui.updateGameState();
-        game.setGeneralGameState(Game.GeneralGameState.RUNNING);
-        game.startGameLoop();
+        // SceneManager sẽ tự động hiển thị Main Menu khi được khởi tạo
+        primaryStage.show();
     }
 
     @Override
     public void stop() throws Exception {
-        if (game != null) {
-            System.out.println("Main application stop method called.");
-            // Đảm bảo game loop được yêu cầu dừng lại một lần nữa
-            game.stopGameLoop(); 
+        System.out.println("Main application stop method called.");
+        // Đảm bảo game loop được yêu cầu dừng lại một lần nữa khi ứng dụng dừng
+        if (sceneManager != null) {
+            sceneManager.stopCurrentGame();
         }
         super.stop();
     }
 
     public static void main(String[] args) {
-        launch(args); 
+        launch(args);
     }
 }

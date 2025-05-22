@@ -7,25 +7,27 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert; // Import Alert
-import javafx.scene.control.Alert.AlertType; // Import AlertType
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType; // Import ButtonType
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.Modality; // Import Modality
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.scene.Parent; // Required for this.root
+import javafx.scene.Scene;  // Required for this.currentScene
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional; // Import Optional
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
@@ -34,7 +36,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     private VBox messageBox;
     private Label messageLabel;
     private HBox playedCardsBox;
-    private HBox playerHandBox; // HBox chỉ dành cho các CardView của người chơi human
+    private HBox playerHandBox;
     private VBox controlBox;
     private Button passButton;
     private Button playButton;
@@ -43,14 +45,19 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     private List<Card> selectedCards = new ArrayList<>();
     private volatile boolean waitingForInput = false;
 
-    private Map<Player, VBox> playerPanels; // VBox cho TẤT CẢ players (AI và Human)
+    private Map<Player, VBox> playerPanels;
 
     public GraphicUIJavaFX(TienLenGame game, Stage primaryStage) {
-        super(game, primaryStage);
-        Scene scene = new Scene(initGUI(), 1200, 800);
-        primaryStage.setScene(scene);
-        primaryStage.setMaximized(true);
+        super(game, primaryStage); // Now the super constructor does less
+
+        this.root = initGUI(); // Initialize the 'root' field from the superclass. initGUI() is called ONCE.
+        this.currentScene = new Scene(this.root); // Initialize the 'currentScene' field from the superclass.
+
+        primaryStage.setScene(this.currentScene); // Set the definitive scene for the game.
+        primaryStage.setMaximized(false);
+        primaryStage.setMaximized(true); // Maximize the stage with this scene.
     }
+
 
     @Override
     protected Parent initGUI() {
@@ -173,7 +180,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         newGameButton.setMaxWidth(Double.MAX_VALUE);
         newGameButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         newGameButton.setOnAction(event -> handleNewGameButton());
-        newGameButton.setDisable(true); // Vô hiệu hóa nút new game lúc đầu
+        newGameButton.setDisable(true);
 
         controlBox.getChildren().addAll(playButton, passButton, newGameButton);
         rootLayout.setRight(controlBox);
@@ -207,9 +214,9 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
                 playerHandBox.getChildren().add(cardView);
             }
         } else if (player.isAI()) {
-            // Nothing to do for AI hand display here
+            
         } else {
-            // If it's a human player but not their turn, clear hand area
+            
             playerHandBox.getChildren().clear();
             playerHandBox.getChildren().add(new Label("Đây không phải lượt của bạn."));
         }
@@ -297,7 +304,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
             TienLenGame tienLenGame = (TienLenGame) game;
             Player currentPlayer = game.getCurrentPlayer();
             if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.canPass(currentPlayer)) {
-                tienLenGame.setPlayerInput(new ArrayList<>()); // Empty list for pass
+                tienLenGame.setPlayerInput(new ArrayList<>());
                 selectedCards.clear();
                 waitingForInput = false;
             } else {
@@ -309,7 +316,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     private void handleNewGameButton() {
         // Reset game state
         game.resetGame();
-        game.dealCards(); // Chia bài lại
+        game.dealCards();
         
         // Reset UI components
         selectedCards.clear();
@@ -320,7 +327,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         // Disable buttons until human player's turn
         playButton.setDisable(true);
         passButton.setDisable(true);
-        newGameButton.setDisable(true); // Disable new game button until next game over
+        newGameButton.setDisable(true);
 
         // Update player panels (clear highlights, update card counts)
         updateGameState(); 
@@ -339,7 +346,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
             for (int i = 0; i < winners.size(); i++) {
                 Player p = winners.get(i);
                 sb.append(p.getWinnerRank()).append(". ").append(p.getName());
-                if (p.getWinnerRank() > 0) { // Chỉ hiển thị rank nếu có
+                if (p.getWinnerRank() > 0) {
                     sb.append(" (Hạng: ").append(p.getWinnerRank()).append(")");
                 }
                 sb.append("\n");
@@ -359,15 +366,15 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
             alert.getButtonTypes().setAll(playAgainButton, exitButton);
 
             // Đặt cửa sổ dialog là cửa sổ con của cửa sổ chính
-            alert.initOwner(primaryStage); // primaryStage là Stage của ứng dụng
-            alert.initModality(Modality.APPLICATION_MODAL); // Chặn tương tác với cửa sổ chính
+            alert.initOwner(primaryStage);
+            alert.initModality(Modality.APPLICATION_MODAL);
 
             Optional<ButtonType> result = alert.showAndWait();
 
             if (result.isPresent() && result.get() == playAgainButton) {
-                handleNewGameButton(); // Gọi lại phương thức xử lý chơi mới
+                handleNewGameButton();
             } else {
-                Platform.exit(); // Thoát ứng dụng nếu người dùng chọn Thoát hoặc đóng dialog
+                Platform.exit();
             }
         });
         
@@ -380,7 +387,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         return null;
     }
 
-    // CardView class remains the same
     class CardView extends StackPane {
         private Card card;
         private boolean selected;

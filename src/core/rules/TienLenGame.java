@@ -22,8 +22,8 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
     protected int roundStarterIndex; 
 
     private volatile List<Card> playerInputCards; 
-    protected final Object playerInputLock = new Object(); 
-    protected volatile boolean waitingForHumanInput = false; 
+    private final Object playerInputLock = new Object(); 
+    private volatile boolean waitingForHumanInput = false; 
     
     // THÊM: Biến trạng thái để kiểm tra nếu đây là lượt đầu tiên của game
     private boolean isFirstTurnOfGame = true;
@@ -727,25 +727,18 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
     }
     
 
-    public void stopGameLoop() {
-        System.out.println("Yêu cầu dừng game loop...");
-        setGeneralGameState(GeneralGameState.GAME_OVER); // Thay đổi trạng thái để vòng lặp kết thúc
-
+    @Override
+	public void stopGameLoop() {
+        // Đặt trạng thái để dừng vòng lặp chính
+        setGeneralGameState(GeneralGameState.GAME_OVER);
         if (gameThread != null && gameThread.isAlive()) {
-            // Thử ngắt thread. Điều này sẽ ném InterruptedException trong runGameLoop nếu thread đang sleep/wait.
-            gameThread.interrupt(); 
+            gameThread.interrupt(); // Ngắt thread nếu nó đang chờ
             try {
-                // Chờ cho thread kết thúc (có thể đặt timeout để tránh bị treo)
-                gameThread.join(2000); // Chờ tối đa 2 giây
-                if (gameThread.isAlive()) {
-                    System.err.println("Game thread không dừng trong thời gian quy định.");
-                }
+                gameThread.join(1000); // Chờ thread kết thúc trong 1 giây
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                System.err.println("Main thread bị gián đoạn khi chờ game thread dừng.");
             }
         }
-        System.out.println("Đã gửi tín hiệu dừng game loop.");
     }
     
     @Override
