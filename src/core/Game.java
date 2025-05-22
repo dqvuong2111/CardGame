@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.swing.SwingUtilities;
+import java.util.function.Consumer;
 
 import ui.Swing.CardGameGUI; 
 
@@ -19,7 +20,7 @@ public abstract class Game<R extends RuleSet> {
     protected List<GameEventListener> listeners;
 
     // THÊM: Khai báo biến gameThread ở đây (FIELD DECLARATION)
-    protected Thread gameThread; 
+    public Thread gameThread; 
     
     public abstract String getGameStateDisplay(); 
     
@@ -28,6 +29,12 @@ public abstract class Game<R extends RuleSet> {
         RUNNING,
         PAUSED,
         GAME_OVER
+    }
+    
+    public Runnable onGameEndCallback;
+    
+    public void setOnGameEndCallback(Runnable callback) { // <-- THÊM DÒNG NÀY
+        this.onGameEndCallback = callback;
     }
     
  // THÊM: Phương thức để thêm người chơi sau khi khởi tạo game
@@ -41,10 +48,12 @@ public abstract class Game<R extends RuleSet> {
     public void startGameLoop() {
         if (gameThread == null || !gameThread.isAlive()) {
             gameThread = new Thread(this::runGameLoop);
+            gameThread.setDaemon(true);
             gameThread.start();
         }
     }
 
+    
     
     public String getName() {
 		return name;
@@ -153,6 +162,13 @@ public abstract class Game<R extends RuleSet> {
             // Không thay đổi người chơi nếu tất cả người chơi khác đã hết bài
         }
         notifyGameStateUpdated();
+    }
+    
+ // THÊM: Phương thức để xóa người nghe sự kiện
+    public void removeGameEventListener(GameEventListener listener) {
+        if (listeners != null) {
+            listeners.remove(listener);
+        }
     }
 
     public Player getCurrentPlayer() {

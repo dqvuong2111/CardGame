@@ -1,4 +1,4 @@
-// Main.java (for JavaFX)
+// Main.java
 import core.*;
 import core.AIPlayer.AIStrategy;
 import core.rules.TienLenGame;
@@ -7,59 +7,74 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import ui.JavaFX.GraphicUIJavaFX;
-import javafx.scene.Scene; // Import Scene
+import javafx.scene.Scene; 
 
 import java.util.ArrayList;
 import java.util.List;
 
-// Main lớp sẽ extends Application
 public class Main extends Application {
 
-    private TienLenGame game; // Giữ tham chiếu đến game
-    private GraphicUIJavaFX gui; // Giữ tham chiếu đến GUI JavaFX
+    private TienLenGame game; 
+    private GraphicUIJavaFX gui; 
+
+    public static volatile boolean isShuttingDown = false; 
 
     @Override
     public void start(Stage primaryStage) {
-        // --- CHỌN GAME Ở ĐÂY ---
         TienLenRule tienLenRule = new TienLenRule();
-        List<Player> players = new ArrayList<>(); // Khởi tạo danh sách người chơi RỖNG
+        List<Player> players = new ArrayList<>(); 
 
         game = new TienLenGame(players, tienLenRule);
         
-        // Thêm người chơi vào game SAU KHI game đã được khởi tạo
-        RuleSet currentRuleSet = game.getRuleSet();
-        Player humanPlayer = new Player("Người chơi 1", false);
-        AIPlayer aiPlayer2 = new AIPlayer("(AI Random)", AIStrategy.RANDOM, currentRuleSet);
-        AIPlayer aiPlayer3 = new AIPlayer("(AI Tham lam)", AIStrategy.GREEDY, currentRuleSet);
-        AIPlayer aiPlayer4 = new AIPlayer("(AI Thông minh)", AIStrategy.SMART, currentRuleSet);
+        Player humanPlayer1 = new Player("Người chơi 1", false);
+        Player humanPlayer2 = new Player("Người chơi 2", false);
+        Player aiPlayer3 = new AIPlayer("AI 3", AIPlayer.AIStrategy.SMART, tienLenRule);
+        Player aiPlayer4 = new AIPlayer("AI 4", AIPlayer.AIStrategy.SMART, tienLenRule);
 
-        game.addPlayer(humanPlayer);
-        game.addPlayer(aiPlayer2);
+        game.addPlayer(humanPlayer1);
+        game.addPlayer(humanPlayer2);
         game.addPlayer(aiPlayer3);
         game.addPlayer(aiPlayer4);
         
-        // Khởi tạo GUI JavaFX
-        gui = new GraphicUIJavaFX(game, primaryStage); // Truyền primaryStage vào GUI
+        gui = new GraphicUIJavaFX(game, primaryStage); // GUI được khởi tạo và tự đăng ký làm listener
 
+        primaryStage.setTitle("Tiến Lên Miền Nam");
+        
+        primaryStage.setOnCloseRequest(event -> {
+            System.out.println("Window closing request received. Terminating game thread and application.");
+            event.consume(); 
+            
+            Main.isShuttingDown = true; 
+            
+            if (game != null) {
+                System.out.println("Yêu cầu dừng game loop...");
+                // Gỡ bỏ GUI khỏi danh sách người nghe sự kiện của game ngay lập tức
+                game.removeGameEventListener(gui); // THAY ĐỔI MỚI TẠI ĐÂY
+                game.stopGameLoop(); 
+            }
 
-        // Thiết lập title cho Stage
-        primaryStage.setTitle(game.getName());
-
-        // Hiển thị Stage
+            Platform.exit();
+        });
+        
         primaryStage.show();
 
-        // Khởi động vòng lặp game trong một thread riêng để không chặn JavaFX Application Thread
         game.dealCards();
-//        System.out.println("Bai Player 1:" +  humanPlayer.getHand().size());
-//        System.out.println("Bai Player 2:" +  humanPlayer2.getHand().size());
-//        System.out.println("Bai AI3:" +  aiPlayer3.getHand().size());
-//        System.out.println("Bai AI4:" +  aiPlayer3.getHand().size());
         gui.updateGameState();
         game.setGeneralGameState(Game.GeneralGameState.RUNNING);
         game.startGameLoop();
     }
 
+    @Override
+    public void stop() throws Exception {
+        if (game != null) {
+            System.out.println("Main application stop method called.");
+            // Đảm bảo game loop được yêu cầu dừng lại một lần nữa
+            game.stopGameLoop(); 
+        }
+        super.stop();
+    }
+
     public static void main(String[] args) {
-        launch(args); // Khởi chạy ứng dụng JavaFX
+        launch(args); 
     }
 }
