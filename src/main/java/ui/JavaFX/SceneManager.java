@@ -3,6 +3,7 @@ package ui.JavaFX;
 import core.AIPlayer;
 import core.Game;
 import core.Player;
+import core.AIStrategy.*;
 import core.rules.TienLenGame;
 import core.rules.TienLenRule;
 import javafx.application.Platform;
@@ -30,7 +31,7 @@ public class SceneManager {
     private int totalPlayers = 2;
     private int humanPlayers = 1;
     private int aiPlayers = 3;
-    private AIPlayer.AIStrategy aiStrategy = AIPlayer.AIStrategy.SMART;
+    private AIPlayer.StrategyType aiStrategy = AIPlayer.StrategyType.SMART;
 
     private Label totalPlayersLabel;
     private Slider totalPlayersSlider;
@@ -38,7 +39,7 @@ public class SceneManager {
     private Slider humanPlayersSlider;
     private Label aiPlayersLabel;
     private Slider aiPlayersSlider;
-    private ChoiceBox<AIPlayer.AIStrategy> aiStrategyChoiceBox;
+    private ChoiceBox<AIPlayer.StrategyType> aiStrategyChoiceBox;
     
     public SceneManager(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -112,7 +113,7 @@ public class SceneManager {
         aiStrategyLabel.setTextFill(javafx.scene.paint.Color.web("#2c3e50"));
 
         aiStrategyChoiceBox = new ChoiceBox<>();
-        aiStrategyChoiceBox.getItems().addAll(AIPlayer.AIStrategy.SMART, AIPlayer.AIStrategy.GREEDY, AIPlayer.AIStrategy.RANDOM);
+        aiStrategyChoiceBox.getItems().addAll(AIPlayer.StrategyType.SMART, AIPlayer.StrategyType.GREEDY, AIPlayer.StrategyType.RANDOM);
         aiStrategyChoiceBox.setValue(aiStrategy);
         aiStrategyChoiceBox.setOnAction(e -> aiStrategy = aiStrategyChoiceBox.getValue());
 
@@ -198,14 +199,30 @@ public class SceneManager {
 
         // Add AI Players
         for (int i = 0; i < aiPlayers; i++) {
-            players.add(new AIPlayer("AI " + (i + humanPlayers + 1), aiStrategy, tienLenRule));
+            AIStrategy strategyImplementation; // Khai báo biến để giữ instance của strategy
+
+            // Sử dụng giá trị enum this.aiStrategy để quyết định tạo instance nào
+            switch (this.aiStrategy) { // this.aiStrategy là enum AIPlayer.AIStrategy (hoặc StrategyType)
+                case RANDOM:
+                    strategyImplementation = new RandomStrategy(); // Tạo đối tượng RandomStrategy
+                    break;
+                case GREEDY:
+                    strategyImplementation = new GreedyStrategy(); // Tạo đối tượng GreedyStrategy
+                    break;
+                case SMART:
+                default: // Mặc định là SMART nếu có giá trị enum không khớp
+                    strategyImplementation = new SmartStrategy(); // Tạo đối tượng SmartStrategy
+                    break;
+            }
+            // Bây giờ truyền strategyImplementation (là một object) vào constructor AIPlayer
+            players.add(new AIPlayer("AI " + (humanPlayers + i + 1), strategyImplementation, tienLenRule));
         }
 
         // If for some reason (e.g. initial setup logic or direct modification)
         // the sum of human and AI players doesn't match totalPlayers, adjust
         // This is a safety net; ideally, updateSliderRanges handles consistency.
         while (players.size() < totalPlayers) {
-            players.add(new AIPlayer("AI " + (players.size() + 1), aiStrategy, tienLenRule));
+            players.add(new AIPlayer("AI " + (players.size() + 1), new SmartStrategy(), tienLenRule));
         }
         // Remove excess players if any (shouldn't happen with correct slider logic)
         while (players.size() > totalPlayers) {
