@@ -28,14 +28,14 @@ public class AIPlayer extends Player {
     /**
      * Chọn lá bài để đánh dựa trên chiến lược AI
      */
-    public List<Card> chooseCards(List<Card> lastPlayed) {
+    public List<Card> chooseCards(List<Card> lastPlayed, boolean isFirstTurn) {
         switch (strategy) {
             case RANDOM:
-                return chooseRandomCards(lastPlayed);
+                return chooseRandomCards(lastPlayed, isFirstTurn);
             case GREEDY:
-                return chooseGreedyCards(lastPlayed);
+                return chooseGreedyCards(lastPlayed, isFirstTurn);
             case SMART:
-                return chooseSmartCards(lastPlayed);
+                return chooseSmartCards(lastPlayed, isFirstTurn);
             default:
                 return new ArrayList<>();
         }
@@ -44,11 +44,19 @@ public class AIPlayer extends Player {
     /**
      * Chiến lược ngẫu nhiên: Chọn bài ngẫu nhiên hợp lệ
      */
-    private List<Card> chooseRandomCards(List<Card> lastPlayed) {
+    private List<Card> chooseRandomCards(List<Card> lastPlayed, boolean isFirstTurn) {
         // Nếu không có bài trước đó, đánh một lá bài ngẫu nhiên
         if (lastPlayed == null || lastPlayed.isEmpty()) {
             if (!hand.isEmpty()) {
-                return List.of(hand.get(0));
+            	if(isFirstTurn) {
+            		for(int i = 0 ; i < hand.size(); i++) {
+                		if(hand.get(i).equals(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
+                			return List.of(hand.get(i));
+                		}
+                	}
+            	} else {
+            		return List.of(hand.get(0));
+            	}
             }
             return new ArrayList<>();
         }
@@ -68,11 +76,19 @@ public class AIPlayer extends Player {
     /**
      * Chiến lược tham lam: Đánh lá nhỏ nhất có thể
      */
-    private List<Card> chooseGreedyCards(List<Card> lastPlayed) {
+    private List<Card> chooseGreedyCards(List<Card> lastPlayed, boolean isFirstTurn) {
         // Nếu không có bài trước đó, đánh lá nhỏ nhất
-        if (lastPlayed == null || lastPlayed.isEmpty()) {
+        if (lastPlayed.isEmpty()) {
             if (!hand.isEmpty()) {
-                return List.of(Collections.min(hand));
+            	if(isFirstTurn) {
+            		for(int i = 0 ; i < hand.size(); i++) {
+                		if(hand.get(i).equals(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
+                			return List.of(hand.get(i));
+                		}
+                	}
+            	} else {
+            		return List.of(Collections.min(hand));
+            	}
             }
             return new ArrayList<>();
         }
@@ -111,28 +127,44 @@ public class AIPlayer extends Player {
     /**
      * Chiến lược thông minh hơn
      */
-    private List<Card> chooseSmartCards(List<Card> lastPlayed) {
+    private List<Card> chooseSmartCards(List<Card> lastPlayed, boolean isFirstTurn) {
         // Nếu không có bài trước đó
         if (lastPlayed == null || lastPlayed.isEmpty()) {
             // Nếu có ít bài, đánh các lá đơn lẻ trước
             if (hand.size() <= 3) {
-                return List.of(findLowestSingleCard());
+                return List.of(findLowestSingleCard(isFirstTurn));
             }
             
             // Ưu tiên đánh sảnh nếu có
             List<List<Card>> straights = findAllStraights(3); // Tìm sảnh từ 3 lá trở lên
             if (!straights.isEmpty()) {
-                return straights.get(0); // Đánh sảnh đầu tiên
+            	if(isFirstTurn) {
+            		for(int i = 0 ; i < straights.size(); i++){
+            			if(straights.get(i).contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
+            				return straights.get(i);
+            			}
+            		}
+            	} else {
+            		return straights.get(0); // Đánh sảnh đầu tiên
+            	}
             }
             
             // Rồi đến đôi
             List<List<Card>> pairs = findAllPairs();
             if (!pairs.isEmpty()) {
-                return pairs.get(0);
+            	if(isFirstTurn) {
+            		for(int i = 0 ; i < straights.size(); i++){
+            			if(straights.get(i).contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
+            				return straights.get(i);
+            			}
+            		}
+            	} else {
+            		return pairs.get(0);
+            	}
             }
             
             // Cuối cùng mới đánh lá đơn, ưu tiên lá nhỏ trước
-            return List.of(findLowestSingleCard());
+            return List.of(findLowestSingleCard(isFirstTurn));
         }
         
         // Nếu có bài trước đó, chiến lược tùy thuộc vào số bài còn lại
@@ -140,7 +172,7 @@ public class AIPlayer extends Player {
         
         // Nếu còn ít bài, cố gắng đánh hết nhanh nhất có thể
         if (cardsLeft <= 3) {
-            return chooseGreedyCards(lastPlayed); // Dùng chiến lược tham lam
+            return chooseGreedyCards(lastPlayed, isFirstTurn); // Dùng chiến lược tham lam
         }
         
         // Với số bài nhiều, dùng chiến lược hỗn hợp
@@ -311,8 +343,12 @@ public class AIPlayer extends Player {
     /**
      * Tìm lá bài đơn nhỏ nhất trong bài
      */
-    private Card findLowestSingleCard() {
-        return hand.isEmpty() ? null : Collections.min(hand);
+    private Card findLowestSingleCard(boolean isFirstTurn) {
+    	if(hand.contains(new Card(Card.Suit.SPADES, Card.Rank.THREE)) && isFirstTurn) {
+    		return new Card(Card.Suit.SPADES, Card.Rank.THREE);
+    	} else {
+    		return hand.isEmpty() ? null : Collections.min(hand);
+    	}
     }
     
     /**

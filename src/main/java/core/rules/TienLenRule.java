@@ -24,7 +24,7 @@ public class TienLenRule implements RuleSet {
     }
 
     private static final Comparator<Card> TIEN_LEN_CARD_COMPARATOR = new TienLenCardComparator();
-
+    Card threeClubs = new Card(Card.Suit.CLUBS, Card.Rank.THREE);
     public static CombinationType getCombinationType(List<Card> cards) {
         if (cards == null || cards.isEmpty()) {
             return CombinationType.INVALID;
@@ -144,7 +144,7 @@ public class TienLenRule implements RuleSet {
         Card newMaxCard = sortedNewCards.get(sortedNewCards.size() - 1);
         Card prevMaxCard = sortedPreviousCards.get(sortedPreviousCards.size() - 1);
 
-        return prevMaxCard.getRank().getValue() < newMaxCard.getRank().getValue();
+        return TIEN_LEN_CARD_COMPARATOR.compare(newMaxCard, prevMaxCard) > 0;
     }
 
     private static boolean isPair(List<Card> cards) {

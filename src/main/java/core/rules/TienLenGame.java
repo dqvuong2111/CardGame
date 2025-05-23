@@ -20,6 +20,7 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
     protected Player lastPlayer; 
     protected int passCount; 
     protected int roundStarterIndex; 
+    Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
 
     private volatile List<Card> playerInputCards; 
     private final Object playerInputLock = new Object(); 
@@ -159,7 +160,6 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
 
         setGeneralGameState(GeneralGameState.RUNNING);
         notifyMessageReceived("Game Tiến Lên Miền Nam đã bắt đầu!");
-        
         while (getGeneralGameState() == GeneralGameState.RUNNING && !checkGameOver()) {
             Player currentPlayer = players.get(currentPlayerIndex);
             
@@ -190,7 +190,7 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
                 AIPlayer aiPlayer = (AIPlayer) currentPlayer;
                 
                 // Đảm bảo AIPlayer.chooseCards trả về danh sách rỗng nếu không có nước đi
-                cardsToPlay = aiPlayer.chooseCards(lastPlayedCards); 
+                cardsToPlay = aiPlayer.chooseCards(lastPlayedCards, isFirstTurnOfGame); 
                 
                 if (cardsToPlay.isEmpty()) {
                     passedTurn = true;
@@ -216,7 +216,7 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
                 notifyGameStateUpdated(); // Cập nhật GUI để hiển thị nút Play/Pass và trạng thái chờ
                 
                 cardsToPlay = getPlayerInput(); // Chờ người chơi chọn bài hoặc bấm Pass
-                Card threeClubs = new Card(Card.Suit.CLUBS, Card.Rank.THREE);
+                
                 waitingForHumanInput = false; // Đã nhận input
                 playerInputCards = null; // Reset input cho lượt sau
                 
@@ -226,7 +226,7 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
                     // Xử lý trường hợp game bị gián đoạn khi chờ input (getplayerInput trả về null)
                     notifyMessageReceived("Người chơi bị gián đoạn, bỏ lượt.");
                     passedTurn = true;
-                } else if (!cardsToPlay.contains(cardsToPlay)){
+                } else {
                     boolean isValid = isValidPlay(cardsToPlay);
                     if (!isValid) {
                         notifyMessageReceived("Bài đánh không hợp lệ! Hãy thử lại.");
@@ -365,7 +365,7 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
                 Thread.currentThread().interrupt();
                 return;
             }
-            selectedCards = ((AIPlayer) currentPlayer).chooseCards(lastPlayedCards);
+            selectedCards = ((AIPlayer) currentPlayer).chooseCards(lastPlayedCards, isFirstTurnOfGame);
             // AI có thể trả về null nếu không có nước đi hợp lệ (tức là pass)
             if (selectedCards == null) {
                 selectedCards = new ArrayList<>(); // Coi như chọn rỗng để xử lý pass
@@ -380,9 +380,9 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
 
         // --- SỬA ĐỔI LOGIC XỬ LÝ LƯỢT ĐẦU TIÊN CỦA GAME VÀ CÁC TRƯỜNG HỢP KHÁC ---
         if (isFirstTurnOfGame) {
-            Card threeClubs = new Card(Card.Suit.CLUBS, Card.Rank.THREE);
+            Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
             // Đảm bảo người chơi hiện tại CÓ 3 Bích
-            if (!currentPlayer.getHand().contains(threeClubs)) {
+            if (!currentPlayer.getHand().contains(threeSpades)) {
                 // Điều này không nên xảy ra nếu findStartingPlayer() đã tìm đúng người
                 // Nhưng là một kiểm tra an toàn. Nếu xảy ra, có thể là lỗi logic hoặc chia bài.
                 notifyMessageReceived("Lỗi: Người đi đầu không có 3 Bích. Vui lòng kiểm tra logic.");
@@ -394,11 +394,11 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
             }
 
             // Kiểm tra xem bài đã chọn có chứa 3 Bích và là hợp lệ không
-            if (selectedCards == null || selectedCards.isEmpty() || !selectedCards.contains(threeClubs)) {
+            if (selectedCards == null || selectedCards.isEmpty() || !selectedCards.contains(threeSpades)) {
                 if (!currentPlayer.isAI()) {
                     notifyMessageReceived("Bạn phải đánh 3 Bích trong lượt đầu tiên của game!");
                     if (selectedCards != null && !selectedCards.isEmpty()) {
-                        //currentPlayer.addCards(selectedCards); // Trả lại bài đã chọn sai
+                        // currentPlayer.addCards(selectedCards); // Trả lại bài đã chọn sai
                     }
                     waitingForHumanInput = true;
                     currentState = GameState.WAITING_FOR_PLAYER_INPUT;
@@ -590,9 +590,9 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
     }
     
     private void findStartingPlayer() {
-        Card threeClubs = new Card(Card.Suit.CLUBS, Card.Rank.THREE);
+        Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
         for (int i = 0; i < players.size(); i++) {
-            if (players.get(i).getHand().contains(threeClubs)) {
+            if (players.get(i).getHand().contains(threeSpades)) {
                 currentPlayerIndex = i;
                 roundStarterIndex = i; // Người bắt đầu vòng đầu tiên của game
                 notifyMessageReceived(players.get(i).getName() + " có 3 Bích. Họ sẽ đi đầu!");
@@ -748,6 +748,9 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
 
     @Override
     public boolean isValidPlay(List<Card> cards) {
+    	if(isFirstTurnOfGame && !cards.contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
+    		return false;
+    	}
         if (lastPlayedCards.isEmpty()) {
             return ruleSet.isValidCombination(cards);
         } else {
