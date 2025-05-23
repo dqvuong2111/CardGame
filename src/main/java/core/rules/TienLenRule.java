@@ -144,7 +144,7 @@ public class TienLenRule implements RuleSet {
         Card newMaxCard = sortedNewCards.get(sortedNewCards.size() - 1);
         Card prevMaxCard = sortedPreviousCards.get(sortedPreviousCards.size() - 1);
 
-        return TIEN_LEN_CARD_COMPARATOR.compare(newMaxCard, prevMaxCard) > 0;
+        return prevMaxCard.getRank().getValue() < newMaxCard.getRank().getValue();
     }
 
     private static boolean isPair(List<Card> cards) {
@@ -257,10 +257,10 @@ public class TienLenRule implements RuleSet {
 
     private static int getSuitValue(Card.Suit suit) {
         return switch (suit) {
-            case CLUBS -> 0;
-            case DIAMONDS -> 1;
-            case HEARTS -> 2;
-            case SPADES -> 3;
+            case CLUBS -> 1;
+            case DIAMONDS -> 2;
+            case HEARTS -> 3;
+            case SPADES -> 0;
         };
     }
 
