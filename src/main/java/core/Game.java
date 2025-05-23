@@ -3,11 +3,7 @@ package core;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import javax.swing.SwingUtilities;
-import java.util.function.Consumer;
-
-import ui.Swing.CardGameGUI; 
+import javafx.application.Platform;
 
 public abstract class Game<R extends RuleSet> {
     protected String name;
@@ -92,50 +88,59 @@ public abstract class Game<R extends RuleSet> {
 
     protected void notifyGameStateUpdated() {
         for (GameEventListener listener : listeners) {
-            SwingUtilities.invokeLater(listener::onGameStateUpdated);
+            // THAY ĐỔI Ở ĐÂY
+            Platform.runLater(listener::onGameStateUpdated);
         }
     }
 
     protected void notifyMessageReceived(String message) {
         for (GameEventListener listener : listeners) {
-            SwingUtilities.invokeLater(() -> listener.onMessageReceived(message));
+            // THAY ĐỔI Ở ĐÂY
+            Platform.runLater(() -> listener.onMessageReceived(message));
         }
     }
-    
+
     protected void notifyPlayerTurnStarted(Player player) {
         for (GameEventListener listener : listeners) {
-            SwingUtilities.invokeLater(() -> listener.onPlayerTurnStarted(player));
+            // THAY ĐỔI Ở ĐÂY
+            Platform.runLater(() -> listener.onPlayerTurnStarted(player));
         }
     }
 
     protected void notifyCardsPlayed(Player player, List<Card> cardsPlayed, List<Card> lastPlayedCards) {
         for (GameEventListener listener : listeners) {
-            SwingUtilities.invokeLater(() -> listener.onCardsPlayed(player, cardsPlayed, lastPlayedCards));
+            // THAY ĐỔI Ở ĐÂY
+            Platform.runLater(() -> listener.onCardsPlayed(player, cardsPlayed, lastPlayedCards));
         }
     }
 
     protected void notifyPlayerPassed(Player player) {
         for (GameEventListener listener : listeners) {
-            SwingUtilities.invokeLater(() -> listener.onPlayerPassed(player));
+            // THAY ĐỔI Ở ĐÂY
+            Platform.runLater(() -> listener.onPlayerPassed(player));
         }
     }
-    
+
     protected void notifyRoundStarted(Player startingPlayer) {
         for (GameEventListener listener : listeners) {
-            SwingUtilities.invokeLater(() -> listener.onRoundStarted(startingPlayer));
+            // THAY ĐỔI Ở ĐÂY
+            Platform.runLater(() -> listener.onRoundStarted(startingPlayer));
         }
     }
 
     protected void notifyPlayerEliminated(Player player) {
         for (GameEventListener listener : listeners) {
-            SwingUtilities.invokeLater(() -> listener.onPlayerEliminated(player));
+            // THAY ĐỔI Ở ĐÂY
+            Platform.runLater(() -> listener.onPlayerEliminated(player));
         }
     }
 
     protected void notifyGameOver(List<Player> winners) {
         for (GameEventListener listener : listeners) {
-        	System.out.println(listener);
-            SwingUtilities.invokeLater(() -> listener.onGameOver(winners));
+            // Dòng System.out.println(listener); có thể giữ lại để debug nếu muốn
+            System.out.println(listener); // In ra listener để kiểm tra (nếu đang debug CardGameGUIJavaFX)
+            // THAY ĐỔI Ở ĐÂY
+            Platform.runLater(() -> listener.onGameOver(winners));
         }
     }
 
@@ -191,7 +196,6 @@ public abstract class Game<R extends RuleSet> {
 
     // Các phương thức abstract để lớp con cài đặt logic cụ thể của game
     protected abstract void dealCards();
-    public abstract void playTurn();
     public abstract boolean checkGameOver();
     protected abstract List<Player> determineWinners(); // Thêm phương thức trừu tượng này
 

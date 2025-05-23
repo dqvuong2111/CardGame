@@ -1,8 +1,5 @@
 package core;
 
-import core.Card.Rank;
-import core.Card.Suit;
-
 public class Card implements Comparable<Card> {
 	public enum Suit {
 		CLUBS,    // Tép (nhỏ nhất)

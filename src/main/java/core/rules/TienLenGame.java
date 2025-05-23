@@ -5,35 +5,30 @@ import core.*;
 import core.Card;
 import core.Game;
 import core.Player;
-import core.rules.TienLenRule; 
-import core.Deck; 
+import core.Deck;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors; 
 
-public class TienLenGame extends Game<TienLenRule> implements Runnable { 
-    protected List<Card> lastPlayedCards; 
-    protected Player lastPlayer; 
-    protected int passCount; 
-    protected int roundStarterIndex; 
-    Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
+public class TienLenGame extends Game<TienLenRule> implements Runnable {
+    protected List<Card> lastPlayedCards;
+    protected Player lastPlayer;
+    protected int passCount;
+    protected int roundStarterIndex;
 
-    private volatile List<Card> playerInputCards; 
-    private final Object playerInputLock = new Object(); 
-    private volatile boolean waitingForHumanInput = false; 
-    
-    // THÊM: Biến trạng thái để kiểm tra nếu đây là lượt đầu tiên của game
+    private volatile List<Card> playerInputCards;
+    private final Object playerInputLock = new Object();
+    private volatile boolean waitingForHumanInput = false;
+
     private boolean isFirstTurnOfGame = true;
-    // THÊM: Danh sách người chiến thắng
     private List<Player> winners;
     private int currentWinnerRank;
-    private final long AI_DELAY_SECONDS = 2; // Ví dụ: 2 giây
-    protected Player playerWhoPlayedLastValidCards; 
-    
+    private final long AI_DELAY_SECONDS = 2; // Thời gian chờ của AI
+    protected Player playerWhoPlayedLastValidCards;
+
     public enum GameState {
         INITIALIZING,
         WAITING_FOR_PLAYER_INPUT,
@@ -41,8 +36,8 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
         ROUND_IN_PROGRESS,
         GAME_OVER_STATE
     }
-    
-    protected GameState currentState; 
+
+    protected GameState currentState;
 
     public TienLenGame(List<Player> players, TienLenRule ruleSet) {
         super("Tien Len Mien Nam", players, new Deck(), ruleSet);
@@ -50,8 +45,8 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
         this.passCount = 0;
         this.roundStarterIndex = -1;
         this.currentState = GameState.INITIALIZING;
-        this.winners = new ArrayList<>(); // Khởi tạo danh sách người thắng cuộc
-        this.currentWinnerRank = 1; // Bắt đầu thứ hạng từ 1 (nhất)
+        this.winners = new ArrayList<>();
+        this.currentWinnerRank = 1;
     }
 
     public GameState getCurrentState() {
@@ -60,11 +55,11 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
 
     protected void setCurrentState(GameState newState) {
         this.currentState = newState;
-        notifyGameStateUpdated(); 
+        notifyGameStateUpdated();
     }
 
     @Override
-	public void dealCards() {
+    public void dealCards() {
         deck.reset();
         deck.shuffle();
 
@@ -74,10 +69,10 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
         for (Player player : players) {
             player.getHand().clear();
             player.setHasNoCards(false);
-            player.setWinnerRank(0); // Reset hạng thắng cuộc
+            player.setWinnerRank(0);
         }
-        this.winners.clear(); // Xóa danh sách người thắng cuộc khi chia bài mới
-        this.currentWinnerRank = 1; // Đặt lại thứ hạng
+        this.winners.clear();
+        this.currentWinnerRank = 1;
 
         for (int i = 0; i < cardsPerPlayer; i++) {
             for (int j = 0; j < numPlayers; j++) {
@@ -100,454 +95,288 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
 
     @Override
     public void startGame() {
-        super.startGame(); 
+        super.startGame();
         if (gameThread == null || !gameThread.isAlive()) {
-             gameThread = new Thread(this); 
+             gameThread = new Thread(this);
+             gameThread.setDaemon(true); // Nên đặt là daemon
              gameThread.start();
         }
-        notifyPlayerTurnStarted(getCurrentPlayer()); 
     }
 
     @Override
     public void resetGame() {
-        stopGameLoop(); 
+        stopGameLoop();
 
         this.generalState = GeneralGameState.INITIALIZING;
         this.currentState = GameState.INITIALIZING;
 
         for (Player p : players) {
             p.getHand().clear();
-            p.setHasNoCards(false); 
-            p.clearWinnerRank(); 
+            p.setHasNoCards(false);
+            p.clearWinnerRank();
         }
-        deck.reset(); 
+        deck.reset();
         lastPlayedCards.clear();
         lastPlayer = null;
         passCount = 0;
-        currentPlayerIndex = 0; 
-        roundStarterIndex = -1; 
+        currentPlayerIndex = 0;
+        roundStarterIndex = -1;
+        this.isFirstTurnOfGame = true; // Reset cho ván mới
+        this.winners.clear();
+        this.currentWinnerRank = 1;
 
-        dealCards();
 
-        findStartingPlayer(); 
-
-        this.generalState = GeneralGameState.RUNNING;
+        dealCards(); 
+        this.generalState = GeneralGameState.RUNNING; // Sẵn sàng chạy
         this.isFinished = false;
 
         notifyMessageReceived("Bắt đầu ván mới! Tìm người đi đầu...");
-        notifyGameStateUpdated(); 
-        
-        if (gameThread == null || !gameThread.isAlive()) {
-             gameThread = new Thread(this); 
-             gameThread.start();
-        }
-        notifyPlayerTurnStarted(getCurrentPlayer()); 
+        notifyGameStateUpdated();
     }
 
-    // Phương thức run() từ interface Runnable
     @Override
-    public void run() { 
-        runGameLoop(); 
+    public void run() {
+        runGameLoop();
     }
 
-    // Phương thức runGameLoop() triển khai abstract method từ lớp Game
     @Override
     public void runGameLoop() {
-        // dealCards() và determineFirstPlayer() đã được gọi từ Main.java
-        // (Hoặc có thể gọi ở đây nếu muốn quản lý hoàn toàn trong game loop)
-        // ensure dealCards() and determineFirstPlayer() are called once before this loop starts
-        // as per Main.java, they are called before startGameLoop()
-
         setGeneralGameState(GeneralGameState.RUNNING);
         notifyMessageReceived("Game Tiến Lên Miền Nam đã bắt đầu!");
-        while (getGeneralGameState() == GeneralGameState.RUNNING && !checkGameOver()) {
+
+        while (getGeneralGameState() == GeneralGameState.RUNNING && !isFinished) {
             Player currentPlayer = players.get(currentPlayerIndex);
-            
-            // Bỏ qua người chơi đã hết bài
+
             if (currentPlayer.hasNoCards()) {
-                // Nếu người chơi đã hết bài mà vẫn đến lượt, chuyển lượt
-                // Điều này có thể xảy ra nếu người đó hết bài ở cuối vòng và vòng mới bắt đầu
-                // mà không có người chơi nào khác để đi tiếp.
-                moveToNextPlayer(); 
-                continue; 
+                moveToNextPlayer();
+                if (checkGameOver()) { // Kiểm tra lại sau khi chuyển người
+                    setGeneralGameState(GeneralGameState.GAME_OVER); // Đặt trạng thái để thoát vòng lặp
+                    break;
+                }
+                continue;
             }
 
             notifyPlayerTurnStarted(currentPlayer);
-            notifyGameStateUpdated();
-            
+
             List<Card> cardsToPlay = null;
             boolean passedTurn = false;
 
             if (currentPlayer.isAI()) {
-                currentState = GameState.AI_THINKING;
+                setCurrentState(GameState.AI_THINKING);
                 try {
+                    // SỬ DỤNG BIẾN AI_DELAY_SECONDS Ở ĐÂY
                     TimeUnit.SECONDS.sleep(AI_DELAY_SECONDS); // AI "suy nghĩ"
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    notifyMessageReceived("AI bị gián đoạn.");
+                    notifyMessageReceived(currentPlayer.getName() + " (AI) bị gián đoạn.");
+                    // Có thể coi như AI bỏ lượt nếu bị gián đoạn
+                    passedTurn = true;
                 }
 
-                AIPlayer aiPlayer = (AIPlayer) currentPlayer;
-                
-                // Đảm bảo AIPlayer.chooseCards trả về danh sách rỗng nếu không có nước đi
-                cardsToPlay = aiPlayer.chooseCards(lastPlayedCards, isFirstTurnOfGame); 
-                
-                if (cardsToPlay.isEmpty()) {
-                    passedTurn = true;
-                } else {
-                    boolean isValid = isValidPlay(cardsToPlay);
-                    if (!isValid) {
-                        // AI chọn bài không hợp lệ (lỗi logic AI), coi như bỏ lượt để tránh kẹt game
-                        // TODO: Cải thiện AI để nó không bao giờ chọn bài không hợp lệ
-                        notifyMessageReceived(aiPlayer.getName() + " chọn bài không hợp lệ, tự động bỏ lượt.");
+                if (!passedTurn) { // Chỉ cho AI chọn bài nếu không bị gián đoạn
+                    AIPlayer aiPlayer = (AIPlayer) currentPlayer;
+                    // Thêm isFirstTurnOfGame vào chooseCards nếu AI cần thông tin này
+                    cardsToPlay = aiPlayer.chooseCards(lastPlayedCards, isFirstTurnOfGame); // Giả sử AIPlayer.chooseCards không cần isFirstTurnOfGame
+                                                                       // Nếu cần, bạn phải thêm tham số đó vào AIPlayer.java
+                    if (cardsToPlay == null || cardsToPlay.isEmpty()) {
                         passedTurn = true;
+                    } else {
+                        // Kiểm tra 3 bích cho AI ở lượt đầu
+                        if (isFirstTurnOfGame) {
+                            Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE);
+                            if (!cardsToPlay.contains(threeSpadesCard)) {
+                                notifyMessageReceived(aiPlayer.getName() + " (AI) lỗi: Không đánh 3 Bích ở lượt đầu. Tự động bỏ lượt.");
+                                passedTurn = true; // AI mắc lỗi, coi như bỏ lượt
+                                cardsToPlay.clear(); // Xóa bài AI đã chọn sai
+                            }
+                        }
+                        if (!passedTurn && !isValidPlay(cardsToPlay)) {
+                            notifyMessageReceived(aiPlayer.getName() + " (AI) chọn bài không hợp lệ. Tự động bỏ lượt.");
+                            passedTurn = true;
+                            cardsToPlay.clear();
+                        }
                     }
                 }
-            } else {
-            	 try {
-                     TimeUnit.SECONDS.sleep(AI_DELAY_SECONDS); // AI "suy nghĩ"
-                 } catch (InterruptedException e) {
-                     Thread.currentThread().interrupt();
-                     notifyMessageReceived("AI bị gián đoạn.");
-                 }
-                // Logic cho người chơi
-                currentState = GameState.WAITING_FOR_PLAYER_INPUT;
-                waitingForHumanInput = true;
-                notifyGameStateUpdated(); // Cập nhật GUI để hiển thị nút Play/Pass và trạng thái chờ
-                
-                cardsToPlay = getPlayerInput(); // Chờ người chơi chọn bài hoặc bấm Pass
-                
-                waitingForHumanInput = false; // Đã nhận input
-                playerInputCards = null; // Reset input cho lượt sau
-                
-                if (cardsToPlay != null && cardsToPlay.isEmpty()) { // Người chơi bấm Pass
+            } else { // Người chơi thường
+                setCurrentState(GameState.WAITING_FOR_PLAYER_INPUT);
+                cardsToPlay = getPlayerInput();
+
+                if (cardsToPlay == null) { // Bị gián đoạn từ getPlayerInput
                     passedTurn = true;
-                } else if (cardsToPlay == null) {
-                    // Xử lý trường hợp game bị gián đoạn khi chờ input (getplayerInput trả về null)
-                    notifyMessageReceived("Người chơi bị gián đoạn, bỏ lượt.");
+                    // notifyMessageReceived(currentPlayer.getName() + " bị gián đoạn, bỏ lượt."); // getPlayerInput đã thông báo
+                } else if (cardsToPlay.isEmpty()) { // Người chơi bấm Pass
                     passedTurn = true;
-                } else {
-                    boolean isValid = isValidPlay(cardsToPlay);
-                    if (!isValid) {
+                } else { // Người chơi chọn bài để đánh
+                    // Kiểm tra 3 bích cho người chơi ở lượt đầu
+                    if (isFirstTurnOfGame) {
+                        Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE);
+                        if (!cardsToPlay.contains(threeSpadesCard)) {
+                            notifyMessageReceived("Lượt đầu tiên phải đánh bài có 3 Bích!");
+                            continue; // Giữ lượt cho người chơi chọn lại
+                        }
+                    }
+                    if (!isValidPlay(cardsToPlay)) {
                         notifyMessageReceived("Bài đánh không hợp lệ! Hãy thử lại.");
-                        // KHÔNG CHUYỂN LƯỢT, giữ nguyên cho người chơi hiện tại
-                        continue; 
+                        continue; // Giữ lượt cho người chơi chọn lại
                     }
                 }
             }
 
+            // --- Phần xử lý lượt đi (passedTurn hoặc đánh bài) ---
             if (passedTurn) {
-                // Người chơi bỏ lượt
+                boolean canPassThisTurn = true;
+                if (lastPlayedCards.isEmpty()) { // Đầu vòng mới
+                    if (isFirstTurnOfGame && currentPlayer.getHand().contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
+                        if(!currentPlayer.isAI()){
+                            notifyMessageReceived("Bạn phải đánh 3 Bích trong lượt đầu tiên của game!");
+                            canPassThisTurn = false;
+                        }
+                        // AI đã được xử lý ở trên, nếu AI pass ở đây nghĩa là nó được phép (ví dụ bị lỗi không có 3 bích)
+                    } else if (!isFirstTurnOfGame) { // Đầu vòng mới, không phải lượt đầu game
+                        if(!currentPlayer.isAI()){
+                             notifyMessageReceived("Bạn không thể bỏ lượt khi là người đi đầu vòng mới!");
+                             canPassThisTurn = false;
+                        }
+                        // AI được phép pass nếu logic của nó cho vậy
+                    }
+                }
+
+                if (!canPassThisTurn) {
+                    continue; // Quay lại chờ input của người chơi hiện tại
+                }
+
                 notifyPlayerPassed(currentPlayer);
                 passCount++;
-                
-                // Tính số người chơi còn đang trong game (chưa hết bài)
-                int activePlayersCount = (int) players.stream().filter(p -> !p.hasNoCards()).count();
-                
-                // Vòng kết thúc nếu tất cả người chơi còn lại (trừ người đã đánh bài cuối cùng) đều bỏ lượt
-                // HOẶC nếu chỉ còn 1 người chơi hoạt động và người đó bỏ lượt
-                // (Điều kiện này phức tạp hơn một chút vì nếu chỉ còn 1 người chơi, và họ bỏ lượt,
-                // thì không ai đỡ bài được, nên lượt phải về người đã đánh cuối cùng)
-                
-                // Trường hợp 1: Người đánh bài cuối cùng là chính người hiện tại
-                // (Đây là vòng mới, hoặc game mới, và người này bỏ lượt, điều này không nên xảy ra nếu có 3 Bích)
-                // Hoặc trường hợp AI ko tìm đc bài nào hợp lệ ở lượt đi đầu tiên của vòng
-                if (lastPlayedCards.isEmpty() && passCount == activePlayersCount) {
-                    // Nếu chưa có bài nào được đánh trong vòng và tất cả người chơi bỏ lượt
-                    // (Điều này thường chỉ xảy ra khi không ai có 3 bích hoặc lỗi logic)
-                    // hoặc là một vòng mới và người đi đầu tiên lại bỏ lượt
-                    notifyMessageReceived("Không ai có thể đi bài. Chuyển sang người tiếp theo.");
-                    moveToNextPlayer(); // Chuyển lượt sang người tiếp theo
-                    lastPlayedCards.clear(); // Vòng mới nhưng vẫn chưa có ai đánh
-                    lastPlayer = null;
-                    passCount = 0; // Reset passCount
-                    playerWhoPlayedLastValidCards = null; // Reset
-                    roundStarterIndex = currentPlayerIndex; // Người đi đầu vòng mới là người hiện tại
-                    notifyRoundStarted(players.get(roundStarterIndex));
-                    continue; // Tiếp tục vòng lặp game
-                }
-                
-                // Trường hợp 2: Vòng kết thúc
-                // Vòng kết thúc khi số người bỏ lượt (sau người đánh cuối cùng) bằng số người chơi còn lại
-                // trừ đi người đã đánh bài cuối cùng và người đang đến lượt (nếu người đó không phải người đánh cuối)
-                // hoặc đơn giản hơn là passCount bằng (tổng số người chơi - 1)
-                // VÍ DỤ: 4 người. A đánh. B bỏ. C bỏ. D bỏ. PassCount = 3. 
-                // Người đã đánh cuối cùng là A. 
-                // A là người duy nhất không bỏ lượt trong số những người chơi còn lại.
-                // activePlayersCount - 1 (vì người đã đánh cuối cùng không tính vào passCount)
-                if (playerWhoPlayedLastValidCards != null && passCount >= activePlayersCount - 1) { 
-                    // VÒNG KẾT THÚC
-                    notifyMessageReceived("Tất cả người chơi đã bỏ lượt sau " + playerWhoPlayedLastValidCards.getName() + ". Vòng mới bắt đầu!");
-                    
-                    // Người đi đầu vòng mới sẽ là người đã đánh bài cuối cùng trong vòng trước
-                    currentPlayerIndex = players.indexOf(playerWhoPlayedLastValidCards);
-                    roundStarterIndex = currentPlayerIndex; // Đặt lại người bắt đầu vòng mới
+                // playerWhoPlayedLastValidCards không đổi nếu người hiện tại pass
 
-                    lastPlayedCards.clear(); // Reset bài đã đánh trên bàn
-                    lastPlayer = null; // Reset người chơi cuối cùng
-                    passCount = 0; // Reset số lượt bỏ
-                    isFirstTurnOfGame = false; // Không còn là lượt đầu tiên của game nếu đã có bài được đánh
-                    notifyRoundStarted(players.get(roundStarterIndex));
-                    
-                } else {
-                    // Chưa kết thúc vòng, chuyển sang người tiếp theo
+                long activePlayersCount = players.stream().filter(p -> !p.hasNoCards()).count();
+                if (playerWhoPlayedLastValidCards != null && passCount >= activePlayersCount -1 && activePlayersCount > 0) { // Đảm bảo activePlayersCount > 0
+                    notifyMessageReceived("Vòng mới! " + playerWhoPlayedLastValidCards.getName() + " sẽ đi trước.");
+                    currentPlayerIndex = players.indexOf(playerWhoPlayedLastValidCards);
+                    roundStarterIndex = currentPlayerIndex;
+                    lastPlayedCards.clear();
+                    lastPlayer = null; // Reset lastPlayer cho vòng mới
+                    passCount = 0;
+                    // playerWhoPlayedLastValidCards giữ nguyên là người bắt đầu vòng mới
+                    isFirstTurnOfGame = false;
+                    if (!players.get(roundStarterIndex).hasNoCards()){ // Chỉ thông báo nếu người đó còn bài
+                        notifyRoundStarted(players.get(roundStarterIndex));
+                    } else { // Người thắng vòng đã hết bài, tìm người kế tiếp
+                        moveToNextPlayer();
+                        if(!checkGameOver()){
+                            lastPlayedCards.clear(); // Vòng mới thực sự
+                            lastPlayer = null;
+                            passCount = 0;
+                            playerWhoPlayedLastValidCards = players.get(currentPlayerIndex);
+                            roundStarterIndex = currentPlayerIndex;
+                            notifyRoundStarted(players.get(roundStarterIndex));
+                        }
+                    }
+                } else if (activePlayersCount <=1 && playerWhoPlayedLastValidCards == null && lastPlayedCards.isEmpty()){
+                     // Trường hợp chỉ còn 1 người, hoặc không ai có thể đánh
+                     if(!checkGameOver()) {
+                         moveToNextPlayer();
+                         // Nếu vẫn không game over, reset vòng
+                         if(!checkGameOver() && players.get(currentPlayerIndex).hasNoCards() == false){
+                            lastPlayedCards.clear();
+                            lastPlayer = null;
+                            passCount = 0;
+                            playerWhoPlayedLastValidCards = players.get(currentPlayerIndex);
+                            roundStarterIndex = currentPlayerIndex;
+                            notifyRoundStarted(players.get(roundStarterIndex));
+                         }
+                     }
+                }
+                else {
                     moveToNextPlayer();
                 }
-
-            } else {
-                // Người chơi đánh bài hợp lệ
-                currentPlayer.removeCards(cardsToPlay); // Xóa bài khỏi tay người chơi
-                lastPlayedCards = new ArrayList<>(cardsToPlay); // Cập nhật bài đã đánh trên bàn
-                lastPlayer = currentPlayer; // Cập nhật người chơi đánh bài cuối cùng
-                playerWhoPlayedLastValidCards = currentPlayer; // Cập nhật người chơi đã đánh bài hợp lệ cuối cùng
+            } else { // Người chơi đánh bài (cardsToPlay không rỗng và hợp lệ)
+                currentPlayer.removeCards(cardsToPlay);
+                lastPlayedCards = new ArrayList<>(cardsToPlay);
+                lastPlayer = currentPlayer;
+                playerWhoPlayedLastValidCards = currentPlayer;
+                passCount = 0;
+                boolean wasFirstTurn = isFirstTurnOfGame; // Lưu lại trạng thái trước khi thay đổi
+                isFirstTurnOfGame = false;
 
                 notifyCardsPlayed(currentPlayer, cardsToPlay, lastPlayedCards);
-                passCount = 0; // Reset số lượt bỏ khi có người đánh bài thành công
-                isFirstTurnOfGame = false; // Không phải lượt đầu tiên nữa
 
-                // Kiểm tra xem người chơi đã hết bài chưa
                 if (currentPlayer.hasNoCards()) {
                     currentPlayer.setHasNoCards(true);
-                    currentPlayer.setWinnerRank(currentWinnerRank);
-                    currentWinnerRank++;
-                    winners.add(currentPlayer);
+                    if (!winners.contains(currentPlayer)) {
+                         currentPlayer.setWinnerRank(currentWinnerRank);
+                         winners.add(currentPlayer);
+                         currentWinnerRank++;
+                    }
                     notifyPlayerEliminated(currentPlayer);
-                    
-                    // Sau khi hết bài, chuyển sang người tiếp theo (không phải vòng mới)
-                    // Nếu người này là người đánh cuối cùng, và mọi người bỏ lượt, thì vòng mới sẽ bắt đầu với người tiếp theo có bài
-                    // Hoặc người tiếp theo trong danh sách nếu không ai còn bài.
-                    moveToNextPlayer(); 
-                    
-                    // Kiểm tra game Over sau khi một người chơi hết bài
-                    if (checkGameOver()) { // Sử dụng phương thức checkGameOver của Game
+                    if (checkGameOver()) {
                         setGeneralGameState(GeneralGameState.GAME_OVER);
-                        notifyGameOver(determineWinners()); // Gọi determineWinners để lấy danh sách cuối cùng
+                        break;
                     }
-
+                    // Nếu người vừa đánh hết bài và thắng vòng luôn
+                    long activePlayersLeft = players.stream().filter(p -> !p.hasNoCards()).count();
+                    if (activePlayersLeft > 0) {
+                        // Tìm người kế tiếp để bắt đầu vòng mới (nếu người hết bài là người cuối cùng đánh hợp lệ)
+                        // Hoặc chỉ đơn giản là chuyển lượt
+                        int originalPlayerIndex = players.indexOf(currentPlayer); // Người vừa hết bài
+                        moveToNextPlayer(); // Chuyển sang người tiếp theo trước
+                        // Nếu người tiếp theo là người mới (không phải người vừa hết bài)
+                        // và người hết bài là người đánh cuối cùng của vòng
+                        if ( (currentPlayerIndex != originalPlayerIndex || activePlayersLeft == 1) && playerWhoPlayedLastValidCards == currentPlayer) {
+                            if (!checkGameOver()) {
+                                notifyMessageReceived("Vòng mới! " + players.get(currentPlayerIndex).getName() + " sẽ đi trước.");
+                                roundStarterIndex = currentPlayerIndex;
+                                lastPlayedCards.clear();
+                                lastPlayer = null;
+                                passCount = 0;
+                                playerWhoPlayedLastValidCards = players.get(roundStarterIndex); // Người mới bắt đầu vòng
+                                notifyRoundStarted(players.get(roundStarterIndex));
+                            }
+                        }
+                        // Nếu không phải trường hợp trên, moveToNextPlayer() đã đủ
+                    }
                 } else {
-                    // Nếu chưa hết bài, chuyển sang người tiếp theo
                     moveToNextPlayer();
                 }
             }
-            
-            // Tạm dừng để người chơi có thể thấy lượt đi
-            try {
-                // Đảm bảo không chờ nếu game đã kết thúc
-                if (getGeneralGameState() == GeneralGameState.RUNNING) {
-                    TimeUnit.MILLISECONDS.sleep(500); // 0.5 giây
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        } // End while loop
 
-    }
-
-
-    @Override
-    public void playTurn() {
-        if (generalState != GeneralGameState.RUNNING) {
-            return;
-        }
-
-        Player currentPlayer = players.get(currentPlayerIndex);
-        notifyPlayerTurnStarted(currentPlayer);
-        notifyGameStateUpdated();
-
-        List<Card> selectedCards = new ArrayList<>();
-
-        if (currentPlayer.isAI()) {
-            currentState = GameState.AI_THINKING;
-            notifyMessageReceived(currentPlayer.getName() + " đang suy nghĩ...");
-            try {
-                TimeUnit.SECONDS.sleep(AI_DELAY_SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-            selectedCards = ((AIPlayer) currentPlayer).chooseCards(lastPlayedCards, isFirstTurnOfGame);
-            // AI có thể trả về null nếu không có nước đi hợp lệ (tức là pass)
-            if (selectedCards == null) {
-                selectedCards = new ArrayList<>(); // Coi như chọn rỗng để xử lý pass
-            }
-        } else {
-            currentState = GameState.WAITING_FOR_PLAYER_INPUT;
-            notifyMessageReceived("Lượt của bạn, " + currentPlayer.getName() + ". Vui lòng chọn bài.");
-            selectedCards = getPlayerInput();
-            playerInputCards = null;
-            waitingForHumanInput = false;
-        }
-
-        // --- SỬA ĐỔI LOGIC XỬ LÝ LƯỢT ĐẦU TIÊN CỦA GAME VÀ CÁC TRƯỜNG HỢP KHÁC ---
-        if (isFirstTurnOfGame) {
-            Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
-            // Đảm bảo người chơi hiện tại CÓ 3 Bích
-            if (!currentPlayer.getHand().contains(threeSpades)) {
-                // Điều này không nên xảy ra nếu findStartingPlayer() đã tìm đúng người
-                // Nhưng là một kiểm tra an toàn. Nếu xảy ra, có thể là lỗi logic hoặc chia bài.
-                notifyMessageReceived("Lỗi: Người đi đầu không có 3 Bích. Vui lòng kiểm tra logic.");
-                // Bỏ qua lượt này và chuyển sang người chơi tiếp theo
-                passCurrentPlayer(currentPlayer);
-                isFirstTurnOfGame = false; // Đã xử lý lượt đầu tiên (dù là bỏ lượt do lỗi)
-                moveToNextPlayer();
-                return;
-            }
-
-            // Kiểm tra xem bài đã chọn có chứa 3 Bích và là hợp lệ không
-            if (selectedCards == null || selectedCards.isEmpty() || !selectedCards.contains(threeSpades)) {
-                if (!currentPlayer.isAI()) {
-                    notifyMessageReceived("Bạn phải đánh 3 Bích trong lượt đầu tiên của game!");
-                    if (selectedCards != null && !selectedCards.isEmpty()) {
-                        // currentPlayer.addCards(selectedCards); // Trả lại bài đã chọn sai
-                    }
-                    waitingForHumanInput = true;
-                    currentState = GameState.WAITING_FOR_PLAYER_INPUT;
-                    notifyGameStateUpdated();
-                    return;
-                } else {
-                    // AI không đánh 3 Bích trong lượt đầu tiên, đây là lỗi AI
-                    notifyMessageReceived(currentPlayer.getName() + " (AI) không đánh 3 Bích trong lượt đầu tiên. Lỗi AI?");
-                    // AI bị coi là bỏ lượt hoặc game có thể tạm dừng để kiểm tra
-                    passCurrentPlayer(currentPlayer);
-                    isFirstTurnOfGame = false;
-                    moveToNextPlayer();
-                    return;
-                }
-            }
-
-            // Nếu đã chọn bài có 3 Bích, kiểm tra tính hợp lệ của tổ hợp
-            if (!ruleSet.isValidCombination(selectedCards)) {
-                if (!currentPlayer.isAI()) {
-                    notifyMessageReceived("Bộ bài bạn chọn có 3 Bích nhưng không phải là tổ hợp hợp lệ. Vui lòng chọn lại.");
-                    currentPlayer.addCards(selectedCards);
-                    waitingForHumanInput = true;
-                    currentState = GameState.WAITING_FOR_PLAYER_INPUT;
-                    notifyGameStateUpdated();
-                    return;
-                } else {
-                    notifyMessageReceived(currentPlayer.getName() + " (AI) đánh 3 Bích nhưng tổ hợp không hợp lệ. Lỗi AI?");
-                    passCurrentPlayer(currentPlayer);
-                    isFirstTurnOfGame = false;
-                    moveToNextPlayer();
-                    return;
-                }
-            }
-
-            // Nếu mọi thứ hợp lệ, đánh bài và đánh dấu isFirstTurnOfGame = false
-            isFirstTurnOfGame = false;
-            lastPlayedCards = new ArrayList<>(selectedCards);
-            lastPlayer = currentPlayer;
-            currentPlayer.removeCards(selectedCards);
-            notifyCardsPlayed(currentPlayer, selectedCards, lastPlayedCards);
-            passCount = 0;
-        } else { // Không phải lượt đầu tiên của game
-            if (selectedCards.isEmpty()) { // Người chơi bỏ lượt (pass)
-                // Người đi đầu vòng mới KHÔNG ĐƯỢC bỏ lượt (nếu lastPlayedCards rỗng)
-                if (lastPlayedCards.isEmpty() && lastPlayer == null) { // Người đi đầu vòng mới
-                    if (!currentPlayer.isAI()) {
-                        notifyMessageReceived("Bạn không thể bỏ lượt khi là người đi đầu vòng mới. Vui lòng chọn bài.");
-                        waitingForHumanInput = true;
-                        currentState = GameState.WAITING_FOR_PLAYER_INPUT;
-                        notifyGameStateUpdated();
-                        return;
-                    } else {
-                        notifyMessageReceived(currentPlayer.getName() + " (AI) cố gắng bỏ lượt không hợp lệ khi là người đi đầu vòng mới.");
-                        // Coi như AI mắc lỗi và buộc nó phải đánh bài (hoặc pass và xử lý game state)
-                        // Tạm thời coi như pass và chuyển lượt, nhưng cần cân nhắc AI logic
-                        passCurrentPlayer(currentPlayer);
-                    }
-                } else {
-                    // Có thể pass nếu không phải là người đi đầu vòng mới
-                    passCurrentPlayer(currentPlayer);
-                }
-            } else { // Người chơi đánh bài
-                boolean isValidMove = false;
-                if (lastPlayedCards.isEmpty()) { // Bắt đầu một vòng mới
-                    // Lượt đầu tiên của vòng (không phải lượt đầu tiên của game)
-                    if (ruleSet.isValidCombination(selectedCards)) {
-                        isValidMove = true;
-                    }
-                } else { // Đánh sau người khác
-                    if (ruleSet.canPlayAfter(selectedCards, lastPlayedCards)) {
-                        isValidMove = true;
-                    }
-                }
-
-                if (isValidMove) {
-                    lastPlayedCards = new ArrayList<>(selectedCards);
-                    lastPlayer = currentPlayer;
-                    currentPlayer.removeCards(selectedCards);
-                    notifyCardsPlayed(currentPlayer, selectedCards, lastPlayedCards);
-                    passCount = 0;
-                } else {
-                    if (!currentPlayer.isAI()) {
-                        notifyMessageReceived("Bài đánh không hợp lệ. Vui lòng chọn lại.");
-                        currentPlayer.addCards(selectedCards);
-                        waitingForHumanInput = true;
-                        currentState = GameState.WAITING_FOR_PLAYER_INPUT;
-                        notifyGameStateUpdated();
-                        return;
-                    } else {
-                        notifyMessageReceived(currentPlayer.getName() + " (AI) đánh bài không hợp lệ. Coi như bỏ lượt.");
-                        passCurrentPlayer(currentPlayer);
-                    }
-                }
-            }
-        }
-
-        // Kiểm tra nếu người chơi hết bài
-        if (currentPlayer.getHand().isEmpty()) {
-            currentPlayer.setHasNoCards(true);
-            notifyPlayerEliminated(currentPlayer);
-            addWinner(currentPlayer); // Thêm người chơi vào danh sách thắng cuộc
-        }
-
-        // Kiểm tra điều kiện kết thúc vòng
-        // Số người chơi không bị loại = tổng số người chơi - số người chơi đã hết bài
-        int activePlayersCount = players.size() - getEliminatedPlayersCount();
-        if (passCount == activePlayersCount - 1 && activePlayersCount > 1) { // Tất cả người chơi khác đã bỏ lượt
-            startNewRound();
-        } else if (activePlayersCount == 1) { // Chỉ còn một người chơi chưa hết bài
-            // Người cuối cùng còn lại sẽ bị coi là thua (hoặc không có hạng)
-            // Hoặc game kết thúc nếu đã xác định được tất cả người thắng
-            checkGameOver(); // Kích hoạt kiểm tra kết thúc game
-        } else {
-            moveToNextPlayer();
-        }
-    }
-    
-    private void startNewRound() {
-        notifyMessageReceived("Vòng mới bắt đầu!");
-        lastPlayedCards.clear();
-        lastPlayer = null;
-        passCount = 0;
-        // Người bắt đầu vòng mới là người vừa đánh bài cuối cùng của vòng trước
-        // hoặc người đi đầu vòng trước nếu tất cả đã pass (lastPlayer == null)
-        // Cần tìm người chơi hợp lệ để bắt đầu vòng mới
-        if (lastPlayer != null) {
-            currentPlayerIndex = players.indexOf(lastPlayer);
-        } else {
-            // Nếu lastPlayer là null (tất cả đã pass ở vòng trước),
-            // người bắt đầu vòng mới là người bắt đầu vòng trước đó (roundStarterIndex)
-            // Cần tìm người chơi hợp lệ từ roundStarterIndex
-            int originalRoundStarter = roundStarterIndex;
-            do {
-                currentPlayerIndex = (roundStarterIndex + 1) % players.size();
-                roundStarterIndex = currentPlayerIndex; // Cập nhật roundStarterIndex cho vòng mới
-                if (players.get(currentPlayerIndex).hasNoCards()) {
-                    if (currentPlayerIndex == originalRoundStarter) {
-                        // Tất cả người chơi còn lại đã hết bài, hoặc chỉ còn một người chơi cuối cùng
-                        // Đây là tình huống game kết thúc
-                        checkGameOver();
-                        return;
-                    }
-                    continue;
-                }
+            if (checkGameOver()) { // Kiểm tra lại ở cuối mỗi lượt
+                setGeneralGameState(GeneralGameState.GAME_OVER);
                 break;
-            } while (true); // Lặp cho đến khi tìm được người chơi hợp lệ
+            }
+
+            try {
+                if (getGeneralGameState() == GeneralGameState.RUNNING) {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                notifyMessageReceived("Vòng lặp game bị gián đoạn.");
+                setGeneralGameState(GeneralGameState.GAME_OVER);
+                break;
+            }
+        } // Kết thúc while
+
+        if (isFinished || getGeneralGameState() == GeneralGameState.GAME_OVER) {
+        	System.out.println("TienLenGame: Game state set to GAME_OVER");
+            List<Player> finalWinners = determineWinners();
+            if (finalWinners.size() < players.size()) {
+                for (Player p : players) {
+                    if (p.getWinnerRank() == 0 && !p.hasNoCards()) {
+                        p.setWinnerRank(currentWinnerRank); // Gán hạng cuối cho người thua
+                        if (!finalWinners.contains(p)) finalWinners.add(p);
+                    }
+                }
+                 Collections.sort(finalWinners, Comparator.comparingInt(Player::getWinnerRank));
+            }
+            notifyGameOver(finalWinners);
+            if (onGameEndCallback != null) {
+                 // Đảm bảo callback được chạy trên luồng JavaFX nếu nó tương tác với UI
+                javafx.application.Platform.runLater(onGameEndCallback);
+            }
         }
-        notifyRoundStarted(players.get(currentPlayerIndex));
     }
+
 
     public int getEliminatedPlayersCount() {
         int count = 0;
@@ -559,141 +388,79 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
         return count;
     }
 
-    public void addWinner(Player player) {
-        if (!winners.contains(player)) { // Đảm bảo không thêm trùng lặp
+    public void addWinner(Player player) { // Phương thức này có vẻ không còn dùng trực tiếp trong runGameLoop mới
+        if (!winners.contains(player)) {
             player.setWinnerRank(currentWinnerRank);
             winners.add(player);
-            currentWinnerRank++; // Tăng thứ hạng cho người tiếp theo
+            currentWinnerRank++;
             notifyMessageReceived(player.getName() + " về đích thứ " + player.getWinnerRank() + "!");
         }
     }
-    
-    private void passCurrentPlayer(Player player) {
-        notifyPlayerPassed(player);
-        passCount++;
-    }
-    
+
     private void moveToNextPlayer() {
+        if (players.stream().filter(p -> !p.hasNoCards()).count() <= 1 && !isFinished) {
+            // Nếu chỉ còn 1 hoặc 0 người chơi còn bài, game nên kết thúc
+            checkGameOver(); // Gọi để cập nhật isFinished và generalState
+            return;
+        }
+
         int originalPlayerIndex = currentPlayerIndex;
         do {
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-            // Nếu đã duyệt hết một vòng mà vẫn quay lại người ban đầu và họ đã hết bài,
-            // có thể cần một cơ chế thoát để tránh vòng lặp vô hạn
-            if (currentPlayerIndex == originalPlayerIndex && players.get(currentPlayerIndex).hasNoCards()) {
-                // Điều này có nghĩa là tất cả người chơi còn lại đều đã hết bài.
-                // Game đáng lẽ đã kết thúc thông qua checkGameOver()
-                // Đây là một biện pháp bảo vệ.
-                setGeneralGameState(GeneralGameState.GAME_OVER); 
-                break; 
+            if (currentPlayerIndex == originalPlayerIndex) { // Đã quay lại người cũ
+                if (players.get(currentPlayerIndex).hasNoCards()) {
+                    // Tất cả người chơi còn lại (nếu có) đều đã hết bài, hoặc chỉ còn 1 người.
+                    // Game nên kết thúc.
+                    if(!checkGameOver()) { // Gọi checkGameOver để cập nhật trạng thái isFinished và generalState
+                         setGeneralGameState(GeneralGameState.GAME_OVER); // Nếu checkGameOver không làm, ép kết thúc
+                    }
+                }
+                break; // Thoát vòng lặp dù người đó còn bài hay không, để tránh kẹt
             }
-        } while (players.get(currentPlayerIndex).hasNoCards()); // Bỏ qua người chơi đã hết bài
+        } while (players.get(currentPlayerIndex).hasNoCards());
     }
-    
+
     private void findStartingPlayer() {
-        Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
+        Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE); // Sử dụng 3 Bích
+        boolean found = false;
         for (int i = 0; i < players.size(); i++) {
-            if (players.get(i).getHand().contains(threeSpades)) {
+            if (players.get(i).getHand().contains(threeSpadesCard)) {
                 currentPlayerIndex = i;
-                roundStarterIndex = i; // Người bắt đầu vòng đầu tiên của game
+                roundStarterIndex = i;
                 notifyMessageReceived(players.get(i).getName() + " có 3 Bích. Họ sẽ đi đầu!");
+                found = true;
                 return;
             }
         }
-        // Fallback nếu không tìm thấy 3 Bích (không nên xảy ra với bộ bài 52 lá đầy đủ)
-        currentPlayerIndex = 0;
-        roundStarterIndex = 0;
-        notifyMessageReceived("Không tìm thấy 3 Bích. Người chơi đầu tiên sẽ đi đầu.");
-    }
-
-
-    private void handlePlay(Player player, List<Card> cards) {
-        player.removeCards(cards);
-        lastPlayedCards = new ArrayList<>(cards); 
-        lastPlayer = player;
-        passCount = 0; 
-        notifyCardsPlayed(player, cards, lastPlayedCards);
-        notifyMessageReceived(player.getName() + " đã đánh: " + cards);
-        notifyGameStateUpdated();
-        
-        if (player.getHand().isEmpty()) {
-            player.setHasNoCards(true); 
-            // Gán thứ hạng cho người chơi đã hết bài
-            List<Player> playersInRankOrder = players.stream()
-                                                    .filter(Player::hasNoCards)
-                                                    .sorted(Comparator.comparing(Player::getWinnerRank))
-                                                    .collect(Collectors.toList());
-            player.setWinnerRank(playersInRankOrder.size() + 1); 
-            notifyPlayerEliminated(player); 
+        if (!found) {
+            currentPlayerIndex = 0;
+            roundStarterIndex = 0;
+            notifyMessageReceived("Không tìm thấy 3 Bích. Người chơi đầu tiên (" + players.get(0).getName() + ") sẽ đi đầu.");
         }
     }
-    
+
     @Override
     public String getGameStateDisplay() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("--- Trạng thái Game Tiến Lên ---\n");
-        sb.append("Lượt của: ").append(getCurrentPlayer().getName()).append("\n");
-        sb.append("Bài đánh gần nhất: ").append(lastPlayedCards.isEmpty() ? "Chưa có" : ruleSet.getCardsDisplay(lastPlayedCards)).append("\n");
-        sb.append("Người đánh gần nhất: ").append(lastPlayer != null ? lastPlayer.getName() : "Không có").append("\n");
-        sb.append("Số lượt bỏ qua: ").append(passCount).append("\n");
-        sb.append("Trạng thái game: ").append(currentState).append("\n");
-        sb.append("Tổng người chơi: ").append(players.size()).append("\n");
-        sb.append("Người chơi đã hết bài: ").append(getEliminatedPlayersCount()).append("\n");
-        sb.append("Người thắng cuộc:\n");
-        if (winners.isEmpty()) {
-            sb.append("  Chưa có");
-        } else {
-            for (Player winner : winners) {
-                sb.append("  - ").append(winner.getName()).append(" (Hạng ").append(winner.getWinnerRank()).append(")\n");
-            }
-        }
-        return sb.toString();
-    }
-
-    private void handlePass(Player player) {
-        if (!canPass(player)) {
-            notifyMessageReceived("Bạn không thể bỏ lượt lúc này!");
-            return; 
-        }
-        passCount++;
-        notifyPlayerPassed(player);
-        notifyMessageReceived(player.getName() + " đã BỎ LƯỢT. (" + passCount + "/" + (players.size() - 1) + " pass)");
-        
-        long activePlayers = players.stream().filter(p -> !p.hasNoCards()).count();
-        if (passCount >= activePlayers - 1) { 
-            lastPlayedCards.clear();
-            lastPlayer = null;
-            passCount = 0; 
-            notifyMessageReceived("Vòng mới bắt đầu!");
-            notifyRoundStarted(getCurrentPlayer()); 
-            notifyGameStateUpdated();
-        }
+        // ... (Giữ nguyên hoặc tùy chỉnh)
+        return "Trạng thái game...";
     }
 
     @Override
     public boolean checkGameOver() {
-        // Game kết thúc khi chỉ còn 1 người chơi chưa hết bài (người thua cuộc)
-        // hoặc khi tất cả người chơi đã hết bài (trừ người cuối cùng).
-        int activePlayers = 0;
-        Player lastActivePlayer = null;
-        for (Player p : players) {
-            if (!p.hasNoCards()) {
-                activePlayers++;
-                lastActivePlayer = p;
-            }
-        }
+        if (isFinished) return true; // Tránh xử lý lặp lại nếu đã kết thúc
 
-        if (activePlayers <= 1) { // Chỉ còn 0 hoặc 1 người chơi
-            if (lastActivePlayer != null) {
-                // Người cuối cùng còn lại sẽ bị coi là thua (không có hạng)
-                // hoặc bạn có thể gán hạng cuối cùng cho họ nếu muốn
-                if (lastActivePlayer.getWinnerRank() == 0) { // Nếu chưa có hạng
-                    // Có thể gán hạng cuối cùng cho người này
-                    lastActivePlayer.setWinnerRank(players.size());
-                    winners.add(lastActivePlayer);
+        long activePlayersCount = players.stream().filter(p -> !p.hasNoCards()).count();
+        if (activePlayersCount <= 1) {
+            isFinished = true;
+            // Gán hạng cho người cuối cùng nếu cần
+            if (activePlayersCount == 1) {
+                Player lastOne = players.stream().filter(p -> !p.hasNoCards()).findFirst().orElse(null);
+                if (lastOne != null && lastOne.getWinnerRank() == 0) {
+                    lastOne.setWinnerRank(winners.size() + 1); // Hạng cuối
+                    if(!winners.contains(lastOne)) winners.add(lastOne);
                 }
             }
-            isFinished = true;
-            generalState = GeneralGameState.GAME_OVER;
+            // generalState sẽ được đặt là GAME_OVER trong runGameLoop khi isFinished là true
             return true;
         }
         return false;
@@ -701,44 +468,55 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
 
     @Override
     protected List<Player> determineWinners() {
-        // Sắp xếp danh sách người thắng cuộc theo thứ hạng
-        Collections.sort(winners, Comparator.comparingInt(Player::getWinnerRank));
-        return new ArrayList<>(winners); // Trả về bản sao để tránh sửa đổi trực tiếp
+        // Đảm bảo tất cả người chơi hết bài đều có hạng
+        for(Player p : players){
+            if(p.hasNoCards() && p.getWinnerRank() == 0 && !winners.contains(p)){
+                // Trường hợp này không nên xảy ra nếu logic gán hạng trong runGameLoop là đúng
+                // nhưng đây là một biện pháp an toàn.
+                p.setWinnerRank(currentWinnerRank++); // Gán hạng nếu chưa có
+                winners.add(p);
+            }
+        }
+        // Sắp xếp người thắng theo hạng
+        winners.sort(Comparator.comparingInt(Player::getWinnerRank)
+                               .thenComparing(Player::getName)); // Sắp xếp thêm theo tên nếu cùng hạng
+        return new ArrayList<>(winners);
     }
-    
-
-
 
     @Override
     public boolean canPass(Player player) {
-        // Chỉ có thể pass nếu không phải là người đi đầu vòng mới
-        // Người đi đầu vòng mới là người mà lastPlayedCards rỗng HOẶC lastPlayer là chính người đó (nếu đã đánh hết bài và bắt đầu vòng mới)
-        return !lastPlayedCards.isEmpty() || (lastPlayer != null && lastPlayer.equals(player));
+        // Luật: không được bỏ lượt nếu là người bắt đầu vòng mới (lastPlayedCards rỗng)
+        // VÀ không phải lượt đầu tiên của game (vì lượt đầu có 3 bích bắt buộc)
+        if (lastPlayedCards.isEmpty()) {
+            return isFirstTurnOfGame; // Được phép pass ở lượt đầu game nếu không có 3 bích (findStartingPlayer sẽ chọn người khác)
+                                      // Hoặc nếu AI không có 3 bích (lỗi logic AI)
+                                      // Người chơi human sẽ bị chặn ở GUI/runGameLoop nếu có 3 bích mà pass.
+        }
+        return true; // Các trường hợp khác được phép pass
     }
 
     @Override
-    public int getPassCount() { 
+    public int getPassCount() {
         return passCount;
     }
-    
 
     @Override
-	public void stopGameLoop() {
-        // Đặt trạng thái để dừng vòng lặp chính
-        setGeneralGameState(GeneralGameState.GAME_OVER);
+    public void stopGameLoop() {
+        setGeneralGameState(GeneralGameState.GAME_OVER); // Đặt isFinished cũng sẽ dừng vòng lặp
+        isFinished = true; // Cách khác để dừng vòng lặp
         if (gameThread != null && gameThread.isAlive()) {
-            gameThread.interrupt(); // Ngắt thread nếu nó đang chờ
+            gameThread.interrupt();
             try {
-                gameThread.join(1000); // Chờ thread kết thúc trong 1 giây
+                gameThread.join(500); // Chờ tối đa 0.5 giây
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
     }
-    
+
     @Override
     public List<Card> getLastPlayedCards() {
-        return lastPlayedCards;
+        return new ArrayList<>(lastPlayedCards); // Trả về bản sao để tránh sửa đổi từ bên ngoài
     }
 
     @Override
@@ -748,12 +526,22 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
 
     @Override
     public boolean isValidPlay(List<Card> cards) {
-    	if(isFirstTurnOfGame && !cards.contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
-    		return false;
-    	}
-        if (lastPlayedCards.isEmpty()) {
+        if (cards == null || cards.isEmpty()) return false; // Đánh rỗng không hợp lệ (pass được xử lý riêng)
+
+        // Xử lý lượt đầu tiên của game (phải có 3 Bích)
+        if (isFirstTurnOfGame) {
+            Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE);
+            if (!cards.contains(threeSpadesCard)) {
+                return false; // Lượt đầu phải chứa 3 Bích
+            }
+            // Và phải là một tổ hợp hợp lệ chứa 3 Bích
             return ruleSet.isValidCombination(cards);
-        } else {
+        }
+
+        // Các lượt tiếp theo
+        if (lastPlayedCards.isEmpty()) { // Bắt đầu vòng mới
+            return ruleSet.isValidCombination(cards);
+        } else { // Đánh theo người khác
             return ruleSet.canPlayAfter(cards, lastPlayedCards);
         }
     }
@@ -761,27 +549,34 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
     @Override
     public void setPlayerInput(List<Card> cards) {
         synchronized (playerInputLock) {
-            this.playerInputCards = cards;
+            this.playerInputCards = cards; // GUI gửi một ArrayList mới
             playerInputLock.notifyAll();
         }
     }
 
     private List<Card> getPlayerInput() {
+        List<Card> inputToReturn;
         synchronized (playerInputLock) {
-            waitingForHumanInput = true;
-            notifyGameStateUpdated(); // Cập nhật GUI để hiển thị trạng thái chờ
-            while (playerInputCards == null) {
+            // Cờ waitingForHumanInput nên được set bởi GUI hoặc logic gọi getPlayerInput
+            // ở đây, nó được set lại ở đầu mỗi lượt người chơi trong runGameLoop
+            // setCurrentState(GameState.WAITING_FOR_PLAYER_INPUT); // Đã làm ở runGameLoop
+
+            while (playerInputCards == null && getGeneralGameState() == GeneralGameState.RUNNING && !Thread.currentThread().isInterrupted()) {
                 try {
-                    playerInputLock.wait();
+                    playerInputLock.wait(1000); // Chờ với timeout để kiểm tra trạng thái game
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    notifyMessageReceived("Game bị gián đoạn khi chờ input.");
-                    return null;
+                    notifyMessageReceived(getCurrentPlayer().getName() + " bị gián đoạn khi chờ input.");
+                    return null; // Trả về null nếu bị gián đoạn
                 }
             }
-            return new ArrayList<>(playerInputCards); // Trả về bản sao để tránh sửa đổi bên ngoài
+            if (playerInputCards == null) { // Timeout hoặc thread bị interrupt mà không có input
+                return null; // Hoặc một danh sách rỗng nếu muốn coi là pass
+            }
+            inputToReturn = new ArrayList<>(playerInputCards); // Tạo bản sao
+            playerInputCards = null; // Reset cho lần chờ input tiếp theo
         }
+        return inputToReturn;
     }
 
-    
 }

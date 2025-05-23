@@ -1,7 +1,5 @@
 package core;
 
-import core.Card;
-
 import java.util.Comparator;
 import java.util.List;
 

@@ -230,6 +230,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
     @Override
     public void updateGameState() {
         Platform.runLater(() -> {
+            // Cập nhật playedCardsBox (giữ nguyên logic của bạn)
             playedCardsBox.getChildren().clear();
             List<Card> lastPlayed = game.getLastPlayedCards();
             if (lastPlayed != null && !lastPlayed.isEmpty()) {
@@ -241,47 +242,76 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
                 playedCardsBox.getChildren().add(new Label("Không có bài trên bàn."));
             }
 
+            // Cập nhật playerPanels (giữ nguyên logic của bạn)
             for (Player p : game.getPlayers()) {
                 VBox playerPanel = playerPanels.get(p);
-                if (playerPanel != null) {
+                if (playerPanel != null && playerPanel.getChildren().size() >= 2) { // Thêm kiểm tra an toàn
                     Label cardsCountLabel = (Label) playerPanel.getChildren().get(1);
                     cardsCountLabel.setText("Bài: " + p.getHand().size());
 
                     Label nameLabel = (Label) playerPanel.getChildren().get(0);
 
-                    if (game.getCurrentPlayer() == p) {
+                    // Chỉ thay đổi style nếu game chưa kết thúc, nếu kết thúc thì giữ nguyên hoặc đặt style cố định
+                    if (game.getGeneralGameState() != Game.GeneralGameState.GAME_OVER && game.getCurrentPlayer() == p) {
                         playerPanel.setStyle("-fx-border-color: blue; -fx-border-width: 3; -fx-border-radius: 5; -fx-background-color: #e0e0ff;");
                         nameLabel.setText(p.getName() + (p.isAI() ? " (AI) - Lượt!" : " (Bạn) - Lượt!"));
                         nameLabel.setTextFill(Color.BLUE);
-                    } else {
+                    } else if (game.getGeneralGameState() != Game.GeneralGameState.GAME_OVER) { // Game đang chạy nhưng không phải lượt người này
                         playerPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
                         nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : ""));
                         nameLabel.setTextFill(Color.BLACK);
+                    } else { // Game đã kết thúc, có thể không cần thay đổi style hoặc đặt style mặc định cho tất cả
+                         playerPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
+                         nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : ""));
+                         nameLabel.setTextFill(Color.BLACK);
                     }
                 }
             }
 
-            Player currentPlayer = game.getCurrentPlayer();
-            if (currentPlayer != null && !currentPlayer.isAI()) {
-                displayPlayerHand(currentPlayer);
-                boolean isHumanTurn = (currentPlayer == game.getCurrentPlayer());
-                boolean isWaitingForInputState = (((TienLenGame) game).getCurrentState() == TienLenGame.GameState.WAITING_FOR_PLAYER_INPUT);
+            // Xử lý trạng thái nút và hiển thị tay bài
+            boolean isGameOver = (game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER);
+            Player currentPlayer = game.getCurrentPlayer(); // Có thể null nếu game vừa kết thúc và chưa có ván mới
 
-                playButton.setDisable(!(isHumanTurn && isWaitingForInputState));
-                passButton.setDisable(!(isHumanTurn && isWaitingForInputState && game.canPass(currentPlayer)));
-                
-                newGameButton.setDisable(!(game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER));
-
-                waitingForInput = (isHumanTurn && isWaitingForInputState);
-            } else {
+            if (isGameOver) {
+                // GAME ĐÃ KẾT THÚC
                 playButton.setDisable(true);
                 passButton.setDisable(true);
-                newGameButton.setDisable(!(game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER));
+                System.out.println("updateGameState: Game Over - Nút Đánh bài và Bỏ lượt đã bị vô hiệu hóa.");
+
                 playerHandBox.getChildren().clear();
-                playerHandBox.getChildren().add(new Label("Chờ lượt của bạn..."));
+                // Hiển thị thông báo phù hợp khi game kết thúc, ví dụ:
+                // messageLabel.setText("Game đã kết thúc! Nhấn 'Ván mới' để chơi lại.");
+                // Hoặc để trống playerHandBox
                 selectedCards.clear();
                 waitingForInput = false;
+            } else {
+                // GAME ĐANG CHẠY
+                if (currentPlayer != null && !currentPlayer.isAI()) {
+                    // Đến lượt người chơi human
+                    displayPlayerHand(currentPlayer);
+                    // boolean isHumanTurn = (currentPlayer == game.getCurrentPlayer()); // Luôn true trong khối if này
+                    boolean isWaitingForInputState = (((TienLenGame) game).getCurrentState() == TienLenGame.GameState.WAITING_FOR_PLAYER_INPUT);
+
+                    playButton.setDisable(!isWaitingForInputState); // Chỉ kích hoạt khi đang chờ input
+                    passButton.setDisable(!(isWaitingForInputState && game.canPass(currentPlayer)));
+                    waitingForInput = isWaitingForInputState;
+                } else {
+                    // Lượt của AI hoặc trạng thái khác (ví dụ: game vừa bắt đầu, chưa đến lượt ai)
+                    playButton.setDisable(true);
+                    passButton.setDisable(true);
+                    System.out.println("updateGameState: Không phải lượt Human hoặc AI đang chơi - Nút Đánh bài và Bỏ lượt đã bị vô hiệu hóa.");
+                    playerHandBox.getChildren().clear();
+                    if (currentPlayer != null && currentPlayer.isAI()) {
+                         playerHandBox.getChildren().add(new Label("Đến lượt " + currentPlayer.getName() + " (AI)..."));
+                    } else {
+                         playerHandBox.getChildren().add(new Label("Chờ lượt..."));
+                    }
+                    selectedCards.clear();
+                    waitingForInput = false;
+                }
             }
+            // Nút "Ván mới" luôn được cập nhật dựa trên isGameOver
+            newGameButton.setDisable(!isGameOver);
         });
     }
 
@@ -355,24 +385,22 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         
         // Hiển thị dialog chiến thắng
         Platform.runLater(() -> {
-            Alert alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle("Game Kết Thúc");
-            alert.setHeaderText("Kết quả ván đấu:");
-            alert.setContentText(sb.toString());
+        	Alert alert = new Alert(AlertType.INFORMATION); //
+            alert.setTitle("Game Kết Thúc"); //
+            alert.setHeaderText("Kết quả ván đấu:"); //
+            alert.setContentText(sb.toString()); //
 
-            // Thêm nút "Chơi lại" và "Thoát"
-            ButtonType confirmButton = new ButtonType("OK");
-            alert.getButtonTypes().setAll(confirmButton);
+            // Chỉ cần nút OK (hoặc nút xác nhận tương ứng với ngôn ngữ)
+            // ButtonType confirmButton = new ButtonType("OK"); // Hoặc ButtonType.OK
+            alert.getButtonTypes().setAll(ButtonType.OK); // (Sửa để chỉ có nút OK)
 
-            // Đặt cửa sổ dialog là cửa sổ con của cửa sổ chính
-            alert.initOwner(primaryStage);
-            alert.initModality(Modality.APPLICATION_MODAL);
+            alert.initOwner(primaryStage); //
+            alert.initModality(Modality.APPLICATION_MODAL); //
 
-            Optional<ButtonType> result = alert.showAndWait();
+            alert.showAndWait(); 
+         // Cần cập nhật trạng thái game và UI sau khi game kết thúc
+            updateGameState(); 
         });
-        
-        // Cần cập nhật trạng thái game và UI sau khi game kết thúc
-        updateGameState(); 
     }
 
     @Override

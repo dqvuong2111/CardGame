@@ -27,7 +27,7 @@ public class SceneManager {
     private GraphicUIJavaFX gameGUI;
     private TienLenGame currentGame;
 
-    private int totalPlayers = 4;
+    private int totalPlayers = 2;
     private int humanPlayers = 1;
     private int aiPlayers = 3;
     private AIPlayer.AIStrategy aiStrategy = AIPlayer.AIStrategy.SMART;
@@ -216,9 +216,6 @@ public class SceneManager {
         currentGame = new TienLenGame(players, tienLenRule);
         gameGUI = new GraphicUIJavaFX(currentGame, primaryStage);
 
-        currentGame.setOnGameEndCallback(() -> {
-            Platform.runLater(this::showMainMenu);
-        });
 
         primaryStage.setTitle("Tiến Lên Miền Nam");
         primaryStage.setMaximized(true);
