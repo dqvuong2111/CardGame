@@ -61,7 +61,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
     @Override
     protected Parent initGUI() {
-        System.out.println("initGUI started.");
         playerPanels = new HashMap<>();
         rootLayout = new BorderPane();
         rootLayout.setPadding(new Insets(20));
@@ -84,10 +83,8 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         allPlayersInfoBox.setPrefWidth(200);
         allPlayersInfoBox.setMinWidth(180);
         allPlayersInfoBox.setMaxWidth(250);
-        System.out.println("allPlayersInfoBox created.");
         
         List<Player> players = game.getPlayers();
-        System.out.println("Number of players found: " + players.size());
         
         players.sort((p1, p2) -> {
             if (!p1.isAI() && p2.isAI()) return -1;
@@ -116,11 +113,9 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
             playerPanels.put(p, playerPanel);
             allPlayersInfoBox.getChildren().add(playerPanel);
-            System.out.println("Added player panel for " + p.getName() + " to allPlayersInfoBox.");
         }
         
         rootLayout.setLeft(allPlayersInfoBox);
-        System.out.println("allPlayersInfoBox set to LEFT.");
         BorderPane.setMargin(allPlayersInfoBox, new Insets(0, 20, 0, 0)); 
 
         // --- Played Cards Section (CENTER) ---
@@ -184,7 +179,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
         controlBox.getChildren().addAll(playButton, passButton, newGameButton);
         rootLayout.setRight(controlBox);
-        System.out.println("initGUI finished. RootLayout has " + rootLayout.getChildren().size() + " children.");
         return rootLayout;
     }
 
@@ -371,11 +365,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
             Optional<ButtonType> result = alert.showAndWait();
 
-            if (result.isPresent() && result.get() == playAgainButton) {
-                handleNewGameButton();
-            } else {
-                Platform.exit();
-            }
+            
         });
         
         // Cần cập nhật trạng thái game và UI sau khi game kết thúc

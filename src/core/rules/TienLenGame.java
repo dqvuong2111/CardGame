@@ -343,6 +343,7 @@ public class TienLenGame extends Game<TienLenRule> implements Runnable {
 
         // Khi game loop kết thúc (generalState != RUNNING hoặc checkGameOver() true)
         if (getGeneralGameState() == GeneralGameState.GAME_OVER) {
+        	System.out.println("notifyGameOver được gọi trước notifyGameOver(winners);!");
             notifyGameOver(winners); // winners đã được điền trong quá trình game
         }
     }
