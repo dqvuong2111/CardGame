@@ -1,7 +1,8 @@
 package ui.JavaFX;
 
 import core.*;
-import core.rules.TienLenGame;
+import core.games.tienlen.*;
+import core.games.tienlen.tienlenmiennam.TienLenMienNamGame;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -30,7 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
+public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
 
     private BorderPane rootLayout;
     private VBox messageBox;
@@ -47,7 +48,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
     private Map<Player, VBox> playerPanels;
 
-    public GraphicUIJavaFX(TienLenGame game, Stage primaryStage) {
+    public GraphicUIJavaFX(TienLenMienNamGame game, Stage primaryStage) {
         super(game, primaryStage); // Now the super constructor does less
 
         this.root = initGUI(); // Initialize the 'root' field from the superclass. initGUI() is called ONCE.
@@ -193,7 +194,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
         if (!player.isAI() && game.getCurrentPlayer() == player) {
             playerHandBox.getChildren().clear();
             List<Card> hand = new ArrayList<>(player.getHand());
-            hand.sort(((TienLenGame) game).ruleSet.getCardComparator());
+            hand.sort(((TienLenMienNamGame) game).ruleSet.getCardComparator());
 
             for (Card card : hand) {
                 CardView cardView = new CardView(card);
@@ -202,7 +203,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
                 }
 
                 cardView.setOnMouseClicked(event -> {
-                    if (((TienLenGame) game).getCurrentState() == TienLenGame.GameState.WAITING_FOR_PLAYER_INPUT && game.getCurrentPlayer() == player) {
+                    if (((TienLenMienNamGame) game).getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT && game.getCurrentPlayer() == player) {
                         if (cardView.isSelected()) {
                             selectedCards.remove(card);
                         } else {
@@ -290,7 +291,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
                     // Đến lượt người chơi human
                     displayPlayerHand(currentPlayer);
                     // boolean isHumanTurn = (currentPlayer == game.getCurrentPlayer()); // Luôn true trong khối if này
-                    boolean isWaitingForInputState = (((TienLenGame) game).getCurrentState() == TienLenGame.GameState.WAITING_FOR_PLAYER_INPUT);
+                    boolean isWaitingForInputState = (((TienLenMienNamGame) game).getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT);
 
                     playButton.setDisable(!isWaitingForInputState); // Chỉ kích hoạt khi đang chờ input
                     passButton.setDisable(!(isWaitingForInputState && game.canPass(currentPlayer)));
@@ -317,7 +318,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
     private void handlePlayButton() {
         if (waitingForInput) {
-            TienLenGame tienLenGame = (TienLenGame) game;
+            TienLenMienNamGame tienLenGame = (TienLenMienNamGame) game;
             Player currentPlayer = game.getCurrentPlayer();
             if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.isValidPlay(selectedCards)) {
                 tienLenGame.setPlayerInput(new ArrayList<>(selectedCards));
@@ -331,7 +332,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
 
     private void handlePassButton() {
         if (waitingForInput) {
-            TienLenGame tienLenGame = (TienLenGame) game;
+            TienLenMienNamGame tienLenGame = (TienLenMienNamGame) game;
             Player currentPlayer = game.getCurrentPlayer();
             if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.canPass(currentPlayer)) {
                 tienLenGame.setPlayerInput(new ArrayList<>());

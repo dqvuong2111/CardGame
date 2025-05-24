@@ -1,11 +1,14 @@
 package ui.JavaFX;
 
-import core.AIPlayer;
 import core.Game;
 import core.Player;
-import core.AIStrategy.*;
-import core.rules.TienLenGame;
-import core.rules.TienLenRule;
+import core.ai.AIPlayer;
+import core.ai.AIStrategy;
+import core.ai.strategies.GreedyStrategy;
+import core.ai.strategies.RandomStrategy;
+import core.ai.strategies.SmartStrategy;
+import core.games.tienlen.tienlenmiennam.TienLenMienNamGame;
+import core.games.tienlen.tienlenmiennam.TienLenMienNamRule;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -26,7 +29,7 @@ import java.util.Optional;
 public class SceneManager {
     private Stage primaryStage;
     private GraphicUIJavaFX gameGUI;
-    private TienLenGame currentGame;
+    private TienLenMienNamGame currentGame;
 
     private int totalPlayers = 2;
     private int humanPlayers = 1;
@@ -189,7 +192,7 @@ public class SceneManager {
     private void startGame() {
         stopCurrentGame();
 
-        TienLenRule tienLenRule = new TienLenRule();
+        TienLenMienNamRule tienLenRule = new TienLenMienNamRule();
         List<Player> players = new ArrayList<>();
 
         // Add human players
@@ -230,7 +233,7 @@ public class SceneManager {
         }
 
 
-        currentGame = new TienLenGame(players, tienLenRule);
+        currentGame = new TienLenMienNamGame(players, tienLenRule);
         gameGUI = new GraphicUIJavaFX(currentGame, primaryStage);
 
 

@@ -1,0 +1,79 @@
+package core.games.tienlen.components;
+
+import core.Card;
+import core.Player;
+import core.games.tienlen.TienLenGameContext;
+import core.games.tienlen.TienLenVariantRuleSet; // <<--- SỬ DỤNG INTERFACE NÀY
+// import core.games.tienlen.TienLenMienNamRule; // Không cần import trực tiếp TienLenMienNamRule nữa trừ khi có lý do đặc biệt
+
+import java.util.List;
+
+public class PlayValidator {
+    private final TienLenGameContext gameContext;
+    private final TienLenVariantRuleSet ruleSet; // <<--- LƯU TRỮ DƯỚI DẠNG INTERFACE
+
+    public PlayValidator(TienLenGameContext gameContext) {
+        this.gameContext = gameContext;
+        this.ruleSet = gameContext.getRuleSet(); // <<--- GÁN TRỰC TIẾP, KHÔNG CẦN ÉP KIỂU
+    }
+
+    public boolean isValidPlayForCurrentContext(List<Card> cardsToPlay, Player currentPlayer) {
+        if (cardsToPlay == null || cardsToPlay.isEmpty()) {
+            return false;
+        }
+
+        // Sử dụng this.ruleSet (là TienLenVariantRuleSet)
+        if (gameContext.isFirstTurnOfGame()) {
+            // Logic kiểm tra 3 Bích có thể cần truy cập các hằng số/phương thức cụ thể.
+            // Nếu TienLenVariantRuleSet không có phương thức để kiểm tra "lá bài bắt đầu",
+            // bạn có thể cần kiểm tra kiểu và ép kiểu một cách cẩn thận, hoặc thêm phương thức đó vào interface.
+            // Giả sử hasStartingCard là một phần của TienLenVariantRuleSet (kế thừa từ RuleSet)
+            Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE); // Cụ thể cho Tiến Lên
+            if (!cardsToPlay.contains(threeSpadesCard)) {
+                gameContext.notifyMessage("Lượt đầu tiên phải đánh bài có 3 Bích!");
+                return false;
+            }
+            if (!this.ruleSet.isValidCombination(cardsToPlay)) {
+                 gameContext.notifyMessage("Tổ hợp bài không hợp lệ!");
+                 return false;
+            }
+            return true;
+        }
+
+        if (gameContext.getLastPlayedCards().isEmpty()) {
+            if (!this.ruleSet.isValidCombination(cardsToPlay)) {
+                gameContext.notifyMessage("Tổ hợp bài không hợp lệ!");
+                return false;
+            }
+        } else {
+            if (!this.ruleSet.canPlayAfter(cardsToPlay, gameContext.getLastPlayedCards())) {
+                gameContext.notifyMessage("Bài của bạn không thể đánh đè bài trên bàn!");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean canPlayerPass(Player currentPlayer) {
+        // Sử dụng this.ruleSet
+        if (gameContext.getLastPlayedCards().isEmpty()) {
+            // Kiểm tra 3 Bích cho lượt đầu game
+            if (gameContext.isFirstTurnOfGame() && currentPlayer.getHand().contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
+                // Nếu RuleSet có phương thức kiểm tra lá bài bắt buộc, dùng nó ở đây.
+                // Giả sử hasStartingCard là một phần của RuleSet mà TienLenVariantRuleSet kế thừa
+                // và nó được hiểu là "có lá bài bắt buộc phải đánh".
+                // Tuy nhiên, logic canPlayerPass này đã xử lý đúng cho Human.
+                if (!currentPlayer.isAI()) {
+                    gameContext.notifyMessage("Bạn phải đánh 3 Bích trong lượt đầu tiên của game!");
+                    return false;
+                }
+            } else if (!gameContext.isFirstTurnOfGame()) { // Mở đầu vòng mới (không phải lượt đầu game)
+                if (!currentPlayer.isAI()) {
+                    gameContext.notifyMessage("Bạn không thể bỏ lượt khi là người đi đầu vòng mới!");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
