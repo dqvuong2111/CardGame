@@ -1,47 +1,60 @@
+// File: core/AIStrategy/RandomStrategy.java
 package core.AIStrategy;
 
 import core.Card;
 import core.RuleSet;
+import core.ai.utils.PlayableMoveGenerator; // Sử dụng lớp tiện ích
+
 import java.util.ArrayList;
 import java.util.List;
-// import java.util.Random; // Có thể cần nếu logic ngẫu nhiên phức tạp hơn
+import java.util.Random;
 
 public class RandomStrategy implements AIStrategy {
+    private Random random = new Random();
+    private static final Card THREE_SPADES = new Card(Card.Suit.SPADES, Card.Rank.THREE); // Cụ thể cho Tiến Lên
 
     @Override
-    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurn) {
+    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
         if (currentHand.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // Logic từ AIPlayer.chooseRandomCards
-        if (lastPlayedCards == null || lastPlayedCards.isEmpty()) { //
-            if (isFirstTurn) { //
-                // Trong lượt đầu tiên, AI Random phải đánh 3 Bích nếu có
-                Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
-                for (Card card : currentHand) {
-                    if (card.equals(threeSpades)) { //
-                        return List.of(card); //
-                    }
+        // Xử lý luật 3 Bích cho lượt đầu tiên của game (Đặc thù Tiến Lên)
+        if (isFirstTurnOfEntireGame) {
+            if (currentHand.contains(THREE_SPADES)) {
+                // RandomStrategy đơn giản có thể chỉ đánh 3 Bích nếu có
+                // Kiểm tra xem đánh lẻ 3 bích có hợp lệ không (luôn hợp lệ nếu không có bài trên bàn)
+                List<Card> threeSpadePlay = List.of(THREE_SPADES);
+                if ((lastPlayedCards == null || lastPlayedCards.isEmpty()) && ruleSet.isValidCombination(threeSpadePlay)) {
+                    return threeSpadePlay;
                 }
-                // Nếu không có 3 Bích (trường hợp hiếm/lỗi chia bài), AI Random có thể bỏ lượt hoặc đánh lá khác
-                // Để đơn giản, nếu không có 3 bích, nó sẽ không đánh gì (bỏ lượt)
-                // Hoặc bạn có thể cho nó đánh lá bài đầu tiên nếu không có 3 bích
-                 if (!currentHand.isEmpty()) return List.of(currentHand.get(0)); // Đánh lá đầu tiên nếu không có 3 bích
-                 return new ArrayList<>();
+                // Nếu có lỗi hoặc không được đánh (rất hiếm), thì sẽ đi xuống logic random bên dưới
             } else {
-                return List.of(currentHand.get(0)); // Đánh lá bài đầu tiên trên tay
+                // Nếu không có 3 Bích trong lượt đầu game, Random AI sẽ không đánh gì (bỏ lượt)
+                // vì luật Tiến Lên yêu cầu.
+                return new ArrayList<>();
             }
         }
 
-        // Thử các tổ hợp bài ngẫu nhiên (ở đây là thử từng lá một cách tuần tự)
-        for (Card card : currentHand) {
-            List<Card> singleCard = List.of(card);
-            if (ruleSet.canPlayAfter(singleCard, lastPlayedCards)) { //
-                return singleCard; //
-            }
+        List<List<Card>> allPlayableMoves = new ArrayList<>();
+
+        // Tìm tất cả các nước đi đơn hợp lệ
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableSingles(currentHand, lastPlayedCards, ruleSet));
+        // Tìm tất cả các nước đi đôi hợp lệ
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayablePairs(currentHand, lastPlayedCards, ruleSet));
+        // Tìm tất cả các nước đi bộ ba hợp lệ
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableTriples(currentHand, lastPlayedCards, ruleSet));
+        // Tìm tất cả các nước đi sảnh hợp lệ
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableStraights(currentHand, lastPlayedCards, ruleSet));
+        // Tìm các nước đi tứ quý (để chặt heo hoặc tứ quý khác)
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableFourOfAKinds(currentHand, lastPlayedCards, ruleSet));
+        // Bạn có thể thêm các loại khác như 3 đôi thông, 4 đôi thông nếu PlayableMoveGenerator hỗ trợ
+
+        if (allPlayableMoves.isEmpty()) {
+            return new ArrayList<>(); // Bỏ lượt nếu không có nước nào
         }
 
-        return new ArrayList<>(); // Bỏ lượt nếu không tìm thấy bài hợp lệ
+        // Chọn ngẫu nhiên một nước đi từ danh sách các nước đi hợp lệ
+        return allPlayableMoves.get(random.nextInt(allPlayableMoves.size()));
     }
 }

@@ -1,285 +1,151 @@
+// File: core/AIStrategy/SmartStrategy.java
 package core.AIStrategy;
 
 import core.Card;
 import core.RuleSet;
-import core.rules.TienLenRule;
+import core.ai.utils.CombinationFinder; // Vẫn có thể dùng để phân tích tay bài nếu cần cho các heuristic phụ
+import core.ai.utils.PlayableMoveGenerator;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 public class SmartStrategy implements AIStrategy {
+    private static final Card THREE_SPADES = new Card(Card.Suit.SPADES, Card.Rank.THREE);
 
     @Override
-    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurn) {
+    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
         if (currentHand.isEmpty()) {
             return new ArrayList<>();
         }
-        // Logic từ AIPlayer.chooseSmartCards
-        if (lastPlayedCards == null || lastPlayedCards.isEmpty()) { //
-            // Xử lý lượt đầu tiên (isFirstTurn)
-            Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
-            if (isFirstTurn && currentHand.contains(threeSpades)) { //
-                // Ưu tiên đánh 3 bích nếu là lượt đầu
-                // Tìm tổ hợp nhỏ nhất chứa 3 bích
-                List<List<Card>> possiblePlays = new ArrayList<>();
-                possiblePlays.add(List.of(threeSpades)); // Đánh lẻ 3 bích
 
-                List<List<Card>> pairs = findAllPairs(currentHand, ruleSet);
-                for(List<Card> pair : pairs) if(pair.contains(threeSpades)) possiblePlays.add(pair);
-
-                List<List<Card>> triples = findAllTriples(currentHand, ruleSet);
-                for(List<Card> triple : triples) if(triple.contains(threeSpades)) possiblePlays.add(triple);
-
-                List<List<Card>> straights = findAllStraights(currentHand, ruleSet, 3); // Sảnh từ 3 lá
-                for(List<Card> straight : straights) if(straight.contains(threeSpades)) possiblePlays.add(straight);
-                // Thêm logic cho các loại sảnh dài hơn nếu cần
-
-                if (!possiblePlays.isEmpty()) {
-                    // Chọn nước đi "tốt nhất" trong các nước có 3 bích (ví dụ: sảnh > bộ > đôi > lẻ)
-                    // Tạm thời trả về đánh lẻ 3 bích
-                    return List.of(threeSpades);
+        // 1. XỬ LÝ LƯỢT ĐẦU TIÊN CỦA TOÀN BỘ VÁN GAME (3 BÍCH)
+        if (isFirstTurnOfEntireGame) {
+            // Logic này vẫn giữ: ưu tiên đánh tổ hợp nhỏ nhất chứa 3 Bích để qua lượt đầu
+            if (currentHand.contains(THREE_SPADES)) {
+                List<List<Card>> playsWithThreeSpades = findPlaysContainingCard(currentHand, THREE_SPADES, ruleSet, lastPlayedCards);
+                if (!playsWithThreeSpades.isEmpty()) {
+                    playsWithThreeSpades.sort(
+                        Comparator.comparingInt((List<Card> list) -> list.size())
+                        .thenComparing(
+                            (List<Card> play) -> ruleSet.getRepresentativeCardForCombination(play),
+                            ruleSet.getCardComparator()
+                        )
+                    );
+                    return playsWithThreeSpades.get(0);
                 }
             }
-            // Logic khi không phải lượt đầu hoặc không có 3 bích
-            if (currentHand.size() <= 3) { //
-                return List.of(findLowestSingleCard(currentHand, ruleSet, isFirstTurn)); // isFirstTurn đã được xử lý
-            }
-            List<List<Card>> straights = findAllStraights(currentHand, ruleSet, 3); //
-            if (!straights.isEmpty()) {
-                // Logic chọn sảnh đầu tiên trong code gốc có thể cần xem lại nếu isFirstTurn đã được xử lý
-                return straights.get(0); //
-            }
-            List<List<Card>> pairs = findAllPairs(currentHand, ruleSet); //
-            if (!pairs.isEmpty()) {
-                 // Logic chọn đôi đầu tiên
-                return pairs.get(0); //
-            }
-            return List.of(findLowestSingleCard(currentHand, ruleSet, isFirstTurn)); //
+            return new ArrayList<>(); // Không có 3 Bích hoặc không tạo được bộ hợp lệ, phải bỏ lượt
         }
 
-        // Nếu có bài trước đó
-        int cardsLeft = currentHand.size(); //
-        if (cardsLeft <= 3) { //
-            // Gọi GreedyStrategy (hoặc copy logic)
-            // Để đơn giản, ở đây có thể gọi lại logic của Greedy
-            GreedyStrategy greedy = new GreedyStrategy(); // Không lý tưởng, nên tái cấu trúc hàm helper
-            return greedy.chooseCards(currentHand, lastPlayedCards, ruleSet, isFirstTurn); //
+        // 2. ƯU TIÊN CÁC NƯỚC ĐI "CHẶT" ĐẶC BIỆT NẾU CÓ LỢI
+        // (Logic này cần được xem xét cẩn thận xem có nên override ưu tiên "nhiều lá nhất" không)
+        // Ví dụ: Tứ quý (4 lá) có thể chặt Heo (1 lá). Nếu chỉ xét "nhiều lá nhất", AI có thể bỏ qua cơ hội chặt Heo
+        // để đánh một sảnh 5 lá (nếu đang mở đầu vòng).
+        // Do đó, logic chặt đặc biệt nên được ưu tiên hơn.
+        List<Card> specialChumpingPlay = findSpecialChumpingPlay(currentHand, lastPlayedCards, ruleSet);
+        if (!specialChumpingPlay.isEmpty()) {
+            return specialChumpingPlay;
         }
 
-        TienLenRule.CombinationType lastType = TienLenRule.getCombinationType(lastPlayedCards); //
-        if (lastType == null || lastType == TienLenRule.CombinationType.INVALID) { //
+        // 3. TÌM TẤT CẢ CÁC NƯỚC ĐI HỢP LỆ THÔNG THƯỜNG
+        List<List<Card>> allPlayableMoves = new ArrayList<>();
+
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableSingles(currentHand, lastPlayedCards, ruleSet));
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayablePairs(currentHand, lastPlayedCards, ruleSet));
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableTriples(currentHand, lastPlayedCards, ruleSet));
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableStraights(currentHand, lastPlayedCards, ruleSet));
+        // Tứ quý thông thường (không phải để chặt heo) cũng là một lựa chọn
+        // Nếu findPlayableFourOfAKinds đã bao gồm cả trường hợp đánh thường và chặt, thì không cần gọi lại
+        // Nhưng nếu nó chỉ trả về khi có thể chặt, thì cần một hàm khác cho Tứ Quý đánh thường.
+        // Giả sử PlayableMoveGenerator.findPlayableFourOfAKinds xử lý cả 2 trường hợp dựa trên lastPlayedCards
+        allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableFourOfAKinds(currentHand, lastPlayedCards, ruleSet));
+        // (Thêm các loại đôi thông nếu PlayableMoveGenerator hỗ trợ)
+
+        if (allPlayableMoves.isEmpty()) {
+            return new ArrayList<>(); // Không có nước đi nào hợp lệ, bỏ lượt
+        }
+
+        // 4. SẮP XẾP CÁC NƯỚC ĐI ƯU TIÊN BỘ NHIỀU LÁ NHẤT
+        // Tiêu chí chính: số lượng lá bài giảm dần (đánh bộ nhiều lá nhất)
+        // Tiêu chí phụ: nếu cùng số lượng lá, đánh bộ có lá đại diện nhỏ hơn (yếu hơn)
+        allPlayableMoves.sort(
+            Comparator.comparingInt((List<Card> list) -> list.size()).reversed() // Sắp xếp theo size giảm dần
+            .thenComparing(
+                (List<Card> play) -> ruleSet.getRepresentativeCardForCombination(play), // Rồi theo lá đại diện tăng dần
+                ruleSet.getCardComparator()
+            )
+        );
+
+        return allPlayableMoves.get(0); // Trả về nước đi đầu tiên (nhiều lá nhất, yếu nhất trong số nhiều lá nhất)
+    }
+
+    // Helper để tìm các tổ hợp chứa một lá bài cụ thể (ví dụ 3 Bích)
+    // Dùng cho lượt đầu tiên của game
+    private List<List<Card>> findPlaysContainingCard(List<Card> hand, Card specificCard, RuleSet ruleSet, List<Card> lastPlayedCards) {
+        List<List<Card>> foundPlays = new ArrayList<>();
+        // Thử đánh lẻ
+        List<Card> singlePlay = List.of(specificCard);
+        if (isValidPlay(singlePlay, lastPlayedCards, ruleSet)) foundPlays.add(singlePlay);
+
+        // Thử tìm đôi chứa specificCard
+        CombinationFinder.findAllPairs(hand, ruleSet).stream()
+            .filter(pair -> pair.contains(specificCard) && isValidPlay(pair, lastPlayedCards, ruleSet))
+            .forEach(foundPlays::add);
+
+        // Thử tìm bộ ba chứa specificCard
+        CombinationFinder.findAllTriples(hand, ruleSet).stream()
+            .filter(triple -> triple.contains(specificCard) && isValidPlay(triple, lastPlayedCards, ruleSet))
+            .forEach(foundPlays::add);
+
+        // Thử tìm sảnh (từ 3 lá) chứa specificCard
+        CombinationFinder.findAllStraights(hand, ruleSet, 3).stream()
+            .filter(straight -> straight.contains(specificCard) && isValidPlay(straight, lastPlayedCards, ruleSet))
+            .forEach(foundPlays::add);
+        return foundPlays;
+    }
+    
+    // Helper kiểm tra tính hợp lệ của một nước đi
+    private boolean isValidPlay(List<Card> play, List<Card> lastPlayedCards, RuleSet ruleSet) {
+        if (!ruleSet.isValidCombination(play)) return false;
+        if (lastPlayedCards == null || lastPlayedCards.isEmpty()) return true; // Hợp lệ nếu mở đầu vòng
+        return ruleSet.canPlayAfter(play, lastPlayedCards);
+    }
+
+    // Helper tìm các nước đi "chặt" đặc biệt
+    private List<Card> findSpecialChumpingPlay(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet) {
+        if (lastPlayedCards == null || lastPlayedCards.isEmpty()) {
             return new ArrayList<>();
         }
 
-        switch (lastType) { //
-            case SINGLE:
-                return findOptimalSinglePlay(currentHand, lastPlayedCards, ruleSet); //
-            case PAIR:
-                return findOptimalPairPlay(currentHand, lastPlayedCards, ruleSet); //
-            case TRIPLE:
-                return findSmallestPlayableTriple(currentHand, lastPlayedCards, ruleSet); //
-            case STRAIGHT:
-                return findSmallestPlayableStraight(currentHand, lastPlayedCards, ruleSet); //
-            case FOUR_OF_KIND:
-                return findPlayableFourOfKind(currentHand, lastPlayedCards, ruleSet); //
-            default:
-                return new ArrayList<>(); //
-        }
-    }
+        // Ưu tiên Tứ Quý nếu có thể chặt Heo hoặc Tứ Quý khác
+        List<List<Card>> playableFours = PlayableMoveGenerator.findPlayableFourOfAKinds(currentHand, lastPlayedCards, ruleSet);
+        if (!playableFours.isEmpty()) {
+            // Kiểm tra xem có đáng để dùng Tứ Quý không
+            Object lastPlayedTypeId = ruleSet.getCombinationIdentifier(lastPlayedCards);
+            Card representativeLastCard = ruleSet.getRepresentativeCardForCombination(lastPlayedCards);
+            boolean isLastCardTwo = representativeLastCard != null && representativeLastCard.getRank() == Card.Rank.TWO;
 
-    // CHUYỂN CÁC HÀM HELPER TỪ AIPlayer.java VÀO ĐÂY
-    // findOptimalSinglePlay, findOptimalPairPlay, containsAllCards
-    // findAllPairs, findAllTriples, findAllFourOfKinds, findAllStraights
-    // findLowestSingleCard, findSmallestPlayableCard, findSmallestPlayablePair, ... (nếu Greedy không dùng chung)
-    // Các hàm này giờ sẽ nhận 'currentHand' và 'ruleSet' làm tham số.
+            // Ví dụ: Chặt Heo hoặc Tứ quý khác
+            // Cần một cách chuẩn để xác định loại từ lastPlayedTypeId
+            // Giả sử typeIdentifier trả về enum hoặc string dễ so sánh
+            String lastTypeString = lastPlayedTypeId != null ? lastPlayedTypeId.toString().toUpperCase() : "";
 
-    private List<Card> findOptimalSinglePlay(List<Card> currentHand, List<Card> lastPlayed, RuleSet ruleSet) { // Thêm currentHand, ruleSet
-        // Logic từ AIPlayer.findOptimalSinglePlay
-        List<Card> playableCards = new ArrayList<>();
-        Card lastCard = lastPlayed.get(0);
-        Comparator<Card> tlComparator = ruleSet.getCardComparator();
-        for (Card card : currentHand) {
-            if (tlComparator.compare(card, lastCard) > 0 && ruleSet.canPlayAfter(List.of(card), lastPlayed)) { // Thêm check canPlayAfter
-                playableCards.add(card);
+            if ((lastTypeString.contains("SINGLE") && isLastCardTwo) || // Chặt Heo đơn
+                (lastTypeString.contains("PAIR") && isLastCardTwo)   || // Chặt Đôi Heo
+                lastTypeString.contains("FOUR_OF_KIND"))              // Chặt Tứ Quý khác
+            {
+                // Sắp xếp các tứ quý đánh được và chọn tứ quý nhỏ nhất
+                playableFours.sort(Comparator.comparing(
+                    play -> ruleSet.getRepresentativeCardForCombination(play),
+                    ruleSet.getCardComparator()
+                ));
+                return playableFours.get(0);
             }
         }
-        if (playableCards.isEmpty()) return new ArrayList<>();
-        Collections.sort(playableCards, ruleSet.getCardComparator());
 
-        List<List<Card>> pairs = findAllPairs(currentHand, ruleSet);
-        List<List<Card>> straights = findAllStraights(currentHand, ruleSet, 3); // Sảnh từ 3 lá
+        // (Thêm logic cho 3 đôi thông, 4 đôi thông nếu chúng được coi là "chặt" đặc biệt và ưu tiên hơn "nhiều lá nhất")
 
-        for (Card card : playableCards) {
-            boolean isInCombination = false;
-            for (List<Card> pair : pairs) if (pair.contains(card)) {isInCombination = true; break;}
-            if (isInCombination) continue;
-            for (List<Card> straight : straights) if (straight.contains(card)) {isInCombination = true; break;}
-            if (!isInCombination) return List.of(card);
-        }
-        return List.of(playableCards.get(0));
-    }
-
-    private List<Card> findOptimalPairPlay(List<Card> currentHand, List<Card> lastPlayed, RuleSet ruleSet) { // Thêm currentHand, ruleSet
-        // Logic từ AIPlayer.findOptimalPairPlay
-        List<List<Card>> pairs = findAllPairs(currentHand, ruleSet);
-        if (pairs.isEmpty()) return new ArrayList<>();
-        pairs.sort(Comparator.comparing(pair -> TienLenRule.getTienLenValue(pair.get(0))));
-
-        List<List<Card>> triples = findAllTriples(currentHand, ruleSet);
-        List<List<Card>> fourOfKinds = findAllFourOfKinds(currentHand, ruleSet);
-
-        for (List<Card> pair : pairs) {
-            if (ruleSet.canPlayAfter(pair, lastPlayed)) {
-                boolean isPartOfHigherCombination = false;
-                for (List<Card> triple : triples) if (containsAllCards(triple, pair)) {isPartOfHigherCombination = true; break;}
-                if (isPartOfHigherCombination) continue;
-                for (List<Card> four : fourOfKinds) if (containsAllCards(four, pair)) {isPartOfHigherCombination = true; break;}
-                if (!isPartOfHigherCombination) return pair;
-            }
-        }
-        for (List<Card> pair : pairs) { // Nếu tất cả đều là một phần của tổ hợp cao hơn
-            if (ruleSet.canPlayAfter(pair, lastPlayed)) return pair;
-        }
-        return new ArrayList<>();
-    }
-
-    private boolean containsAllCards(List<Card> cards1, List<Card> cards2) { //
-        return cards1.containsAll(cards2);
-    }
-
-    // Copy các hàm findAll..., findSmallestPlayable... từ GreedyStrategy nếu cần thiết và không muốn tạo instance GreedyStrategy
-    // Hoặc tốt hơn là tạo một lớp tiện ích (AIUtils) cho các hàm tìm tổ hợp này.
-    // Dưới đây là ví dụ copy một vài hàm, bạn cần hoàn thiện phần này.
-    private Card findLowestSingleCard(List<Card> currentHand, RuleSet ruleSet, boolean isFirstTurn) {
-        if (isFirstTurn) {
-            Card threeSpades = new Card(Card.Suit.SPADES, Card.Rank.THREE);
-            if(currentHand.contains(threeSpades)) return threeSpades;
-        }
-        if (currentHand.isEmpty()) return null;
-        List<Card> sortedHand = new ArrayList<>(currentHand);
-        sortedHand.sort(ruleSet.getCardComparator());
-        return sortedHand.get(0);
-    }
-    private List<List<Card>> findAllPairs(List<Card> currentHand, RuleSet ruleSet) {
-        List<List<Card>> pairs = new ArrayList<>();
-        List<Card> sortedHand = new ArrayList<>(currentHand);
-        sortedHand.sort(ruleSet.getCardComparator());
-        for (int i = 0; i < sortedHand.size() - 1; i++) {
-            if (sortedHand.get(i).getRank() == sortedHand.get(i + 1).getRank()) {
-                List<Card> pair = new ArrayList<>();
-                pair.add(sortedHand.get(i));
-                pair.add(sortedHand.get(i + 1));
-                pairs.add(pair);
-                i++;
-            }
-        }
-        return pairs;
-    }
-     private List<List<Card>> findAllTriples(List<Card> currentHand, RuleSet ruleSet) {
-        List<List<Card>> triples = new ArrayList<>();
-        List<Card> sortedHand = new ArrayList<>(currentHand);
-        sortedHand.sort(ruleSet.getCardComparator());
-        for (int i = 0; i < sortedHand.size() - 2; i++) {
-            if (sortedHand.get(i).getRank() == sortedHand.get(i+1).getRank() &&
-                sortedHand.get(i).getRank() == sortedHand.get(i+2).getRank()) {
-                List<Card> triple = new ArrayList<>();
-                triple.add(sortedHand.get(i));
-                triple.add(sortedHand.get(i+1));
-                triple.add(sortedHand.get(i+2));
-                triples.add(triple);
-                i += 2;
-            }
-        }
-        return triples;
-    }
-    private List<List<Card>> findAllFourOfKinds(List<Card> currentHand, RuleSet ruleSet) {
-        List<List<Card>> fourOfKinds = new ArrayList<>();
-        List<Card> sortedHand = new ArrayList<>(currentHand);
-        sortedHand.sort(ruleSet.getCardComparator());
-        for (int i = 0; i < sortedHand.size() - 3; i++) {
-            if (sortedHand.get(i).getRank() == sortedHand.get(i+1).getRank() &&
-                sortedHand.get(i).getRank() == sortedHand.get(i+2).getRank() &&
-                sortedHand.get(i).getRank() == sortedHand.get(i+3).getRank()) {
-                List<Card> fourOfKind = new ArrayList<>();
-                fourOfKind.add(sortedHand.get(i));
-                fourOfKind.add(sortedHand.get(i+1));
-                fourOfKind.add(sortedHand.get(i+2));
-                fourOfKind.add(sortedHand.get(i+3));
-                fourOfKinds.add(fourOfKind);
-                i += 3;
-            }
-        }
-        return fourOfKinds;
-    }
-    private List<List<Card>> findAllStraights(List<Card> currentHand, RuleSet ruleSet, int length) {
-        if (length < 3 || currentHand.size() < length) return new ArrayList<>();
-        List<List<Card>> straights = new ArrayList<>();
-        List<Card> sortedHandCopy = new ArrayList<>(currentHand);
-        sortedHandCopy.sort(ruleSet.getCardComparator());
-        List<Card> uniqueValueCards = new ArrayList<>();
-        if (!sortedHandCopy.isEmpty()){
-            uniqueValueCards.add(sortedHandCopy.get(0));
-            for (int k = 1; k < sortedHandCopy.size(); k++) {
-                if (TienLenRule.getTienLenValue(sortedHandCopy.get(k)) > TienLenRule.getTienLenValue(sortedHandCopy.get(k-1))) {
-                    uniqueValueCards.add(sortedHandCopy.get(k));
-                }
-            }
-        }
-        for (int i = 0; i <= uniqueValueCards.size() - length; i++) {
-            boolean isStraight = true;
-            for (int j = 1; j < length; j++) {
-                 int prevTLValue = TienLenRule.getTienLenValue(uniqueValueCards.get(i+j-1));
-                 int currTLValue = TienLenRule.getTienLenValue(uniqueValueCards.get(i+j));
-                 if (currTLValue - prevTLValue != 1) {isStraight = false; break;}
-            }
-            if (isStraight) {
-                 int lastStraightValue = TienLenRule.getTienLenValue(uniqueValueCards.get(i + length - 1));
-                 if (lastStraightValue == 15) isStraight = false;
-            }
-            if (isStraight) {
-                List<Card> straight = new ArrayList<>();
-                for (int j = 0; j < length; j++) straight.add(uniqueValueCards.get(i+j));
-                straights.add(straight);
-            }
-        }
-        return straights;
-    }
-    // Các hàm findSmallestPlayable... tương tự như GreedyStrategy nếu cần
-    private List<Card> findSmallestPlayableTriple(List<Card> currentHand, List<Card> lastPlayed, RuleSet ruleSet) {
-        List<List<Card>> triples = findAllTriples(currentHand, ruleSet);
-        if (triples.isEmpty()) return new ArrayList<>();
-        triples.sort(Comparator.comparing(triple -> TienLenRule.getTienLenValue(triple.get(0))));
-        for (List<Card> triple : triples) {
-            if (ruleSet.canPlayAfter(triple, lastPlayed)) {
-                return triple;
-            }
-        }
-        return new ArrayList<>();
-    }
-    private List<Card> findSmallestPlayableStraight(List<Card> currentHand, List<Card> lastPlayed, RuleSet ruleSet) {
-        int length = lastPlayed.size();
-        List<List<Card>> straights = findAllStraights(currentHand, ruleSet, length);
-        if (straights.isEmpty()) return new ArrayList<>();
-        straights.sort(Comparator.comparing(
-                straight -> Collections.max(straight, ruleSet.getCardComparator()),
-                ruleSet.getCardComparator()
-        ));
-        for (List<Card> straight : straights) {
-            if (ruleSet.canPlayAfter(straight, lastPlayed)) {
-                return straight;
-            }
-        }
-        return new ArrayList<>();
-    }
-    private List<Card> findPlayableFourOfKind(List<Card> currentHand, List<Card> lastPlayed, RuleSet ruleSet) {
-        List<List<Card>> fourOfKinds = findAllFourOfKinds(currentHand, ruleSet);
-        if (fourOfKinds.isEmpty()) return new ArrayList<>();
-        for (List<Card> fourOfKind : fourOfKinds) {
-            if (ruleSet.canPlayAfter(fourOfKind, lastPlayed)) {
-                return fourOfKind;
-            }
-        }
-        return new ArrayList<>();
+        return new ArrayList<>(); // Không có nước chặt đặc biệt nào được chọn
     }
 }
