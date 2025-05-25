@@ -177,7 +177,7 @@ public class SceneManager {
 	 
 	 
 	    Button newGameButton = new Button("Tùy Chỉnh Ván Chơi");
-	    styleMenuButton(newGameButton, "#2ecc71", "#27ae60");
+	    styleMenuButton(newGameButton, "#FF8C00", "#FFA500");
 	    // Quan trọng: các setOnAction giờ sẽ gọi các phương thức show...Scene tương ứng
 	    newGameButton.setOnAction(e -> showPlayerCustomizationScene());
 
@@ -323,8 +323,8 @@ public class SceneManager {
 	    mainPanel.setMaxWidth(600); 
 
 	    Label sceneTitleLabel = new Label("Tùy Chỉnh Ván Chơi");
-	    sceneTitleLabel.setFont(Font.font("Arial", FontWeight.BLACK, 30)); // Tăng FontWeight và có thể cả size một chút
-	    sceneTitleLabel.setTextFill(javafx.scene.paint.Color.web("#1A237E")); // Màu xanh navy đậm
+	    sceneTitleLabel.setFont(Font.font("Arial", FontWeight.BLACK, 30));
+	    sceneTitleLabel.setTextFill(javafx.scene.paint.Color.WHITE); // << MÀU TRẮNG
 	    sceneTitleLabel.setMaxWidth(Double.MAX_VALUE);
 	    sceneTitleLabel.setAlignment(Pos.CENTER);
 	    javafx.scene.effect.DropShadow ds = new javafx.scene.effect.DropShadow();
@@ -337,8 +337,8 @@ public class SceneManager {
 
 	    Label fixedTotalDisplay = new Label("Tổng người chơi: " + FIXED_TOTAL_PLAYERS + " (cố định)");
 	    // Cải tiến:
-	    fixedTotalDisplay.setFont(Font.font("Arial", FontWeight.BLACK, 16)); // Đậm hơn một chút (SEMI_BOLD)
-	    fixedTotalDisplay.setTextFill(javafx.scene.paint.Color.web("#1A237E")); // Màu xám xanh đậm, dễ đọc
+	    fixedTotalDisplay.setFont(Font.font("Arial", FontWeight.BOLD, 18)); // Có thể dùng BOLD thay vì BLACK nếu muốn nhẹ hơn title
+	    fixedTotalDisplay.setTextFill(javafx.scene.paint.Color.WHITE);      
 	    // Các thuộc tính khác giữ nguyên:
 	     fixedTotalDisplay.setMaxWidth(Double.MAX_VALUE);
 	     fixedTotalDisplay.setAlignment(Pos.CENTER);
@@ -397,7 +397,7 @@ public class SceneManager {
 	    backToMainMenuBtn.setOnAction(e -> showMainMenu());
 
 	    Button startGameCustomBtn = new Button("Bắt Đầu Chơi");
-	    styleSelectionSceneButton(startGameCustomBtn, "#27AE60", "#229954", 180);
+	    styleSelectionSceneButton(startGameCustomBtn, "#FF8C00", "#FFA500", 180);
 	    startGameCustomBtn.setOnAction(e -> startGame());
 
 	    bottomButtonBar.getChildren().addAll(backToMainMenuBtn, startGameCustomBtn);
@@ -416,16 +416,51 @@ public class SceneManager {
 
 	// Helper style cho các label hiển thị giá trị trên scene tùy chỉnh
 	private void styleValueDisplayLabel(Label label) {
-		label.setFont(Font.font("Arial", FontWeight.BLACK, 16));
-		label.setTextFill(javafx.scene.paint.Color.web("#1A237E"));
+		 label.setFont(Font.font("Arial", FontWeight.BOLD, 18)); // Tăng size lên 18, giữ đậm
+		 label.setTextFill(javafx.scene.paint.Color.WHITE);
 	}
 
 	// Helper style cho các nút "Thay đổi" nhỏ
 	private void styleMiniButton(Button button) {
-		button.setFont(Font.font("Arial", FontWeight.BLACK, 14));
-		button.setPrefHeight(30);
-		button.setPrefWidth(120);
-		// Thêm style nếu muốn
+	    button.setFont(Font.font("Arial", FontWeight.BLACK, 14));
+	    button.setPrefHeight(32);
+	    button.setPrefWidth(120);
+	    
+	    // Hiện tại đang sử dụng màu nền trắng rất mờ và chữ trắng (cần điều chỉnh nếu muốn chữ nổi bật)
+	    String baseColor = "rgba(255, 255, 255, 0.2)"; 
+	    String hoverColor = "rgba(255, 255, 255, 0.4)"; 
+	    String textFill = "white"; 
+
+	    // Nếu muốn nút có nền tối để chữ trắng nổi bật hơn (ví dụ)
+	    // baseColor = "rgba(0, 0, 0, 0.4)";
+	    // hoverColor = "rgba(0, 0, 0, 0.6)";
+	    // textFill = "white";
+
+	    String baseStyle = String.format(
+	        "-fx-background-color: %s; " +
+	        "-fx-text-fill: %s; " +
+	        "-fx-background-radius: 5; " + 
+	        "-fx-border-radius: 5; " +
+	        "-fx-border-color: rgba(255,255,255,0.5);" + // Viền trắng mờ
+	        "-fx-border-width: 1px;" +
+	        "-fx-padding: 5 15 5 15;",
+	        baseColor, textFill
+	    );
+	    String hoverStyle = String.format(
+	        "-fx-background-color: %s; " +
+	        "-fx-text-fill: %s; " +
+	        "-fx-background-radius: 5; " +
+	        "-fx-border-radius: 5; " +
+	        "-fx-border-color: rgba(255,255,255,0.8);" +
+	        "-fx-border-width: 1px;" +
+	        "-fx-padding: 5 15 5 15;",
+	        hoverColor, textFill
+	    );
+
+	    button.setStyle(baseStyle);
+	    button.setOnMouseEntered(e -> button.setStyle(hoverStyle));
+	    button.setOnMouseExited(e -> button.setStyle(baseStyle));
+	    button.setCursor(javafx.scene.Cursor.HAND);
 	}
 
 	// Hàm này sẽ cập nhật các Label trên PlayerCustomizationScene
@@ -446,19 +481,31 @@ public class SceneManager {
 	}
 
 // Hàm helper để style các nút trên Menu (tùy chọn)
-	private void styleMenuButton(Button button, String baseColor, String hoverColor) {
-		button.setPrefWidth(300);
-		button.setPrefHeight(70);
-		button.setFont(Font.font("Arial", FontWeight.BLACK, 26));
-		String baseStyle = String.format(
-				"-fx-background-color: %s; -fx-text-fill: white; -fx-background-radius: 8; -fx-border-radius: 8;",
-				baseColor);
-		String hoverStyle = String.format(
-				"-fx-background-color: %s; -fx-text-fill: white; -fx-background-radius: 8; -fx-border-radius: 8;",
-				hoverColor);
-		button.setStyle(baseStyle);
-		button.setOnMouseEntered(e -> button.setStyle(hoverStyle));
-		button.setOnMouseExited(e -> button.setStyle(baseStyle));
+	public void styleMenuButton(Button button, String baseColor, String hoverColor) {
+	    button.setPrefWidth(300);
+	    button.setPrefHeight(70);
+
+	    // Nếu bạn muốn tất cả các nút menu có font chữ và màu chữ cố định (ví dụ, chữ trắng nét đậm)
+	    // bạn có thể đặt Font ở đây thay vì chỉ định màu nền và hover.
+	    // Ví dụ: Chữ trắng, nét đậm cho TẤT CẢ các nút gọi hàm này
+	    button.setFont(Font.font("Arial", FontWeight.BOLD, 26)); // Giữ nguyên hoặc đổi sang FontWeight.BLACK nếu muốn đậm hơn
+	    // button.setTextFill(Color.WHITE); // Đã có trong setStyle bên dưới rồi
+
+	    String baseStyle = String.format(
+	            "-fx-background-color: %s; -fx-text-fill: white; " +
+	            "-fx-background-radius: 10; -fx-border-radius: 10; " + // Tăng bo góc
+	            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0.0, 0, 3);", // Thêm bóng đổ cho nút
+	            baseColor);
+	    String hoverStyle = String.format(
+	            "-fx-background-color: %s; -fx-text-fill: white; " +
+	            "-fx-background-radius: 10; -fx-border-radius: 10; " +
+	            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0.0, 0, 4);", // Bóng đổ đậm hơn khi hover
+	            hoverColor);
+
+	    button.setStyle(baseStyle);
+	    button.setOnMouseEntered(e -> button.setStyle(hoverStyle));
+	    button.setOnMouseExited(e -> button.setStyle(baseStyle));
+	    button.setCursor(javafx.scene.Cursor.HAND); // Thêm con trỏ tay
 	}
 
 	private void updatePlayerCountsAndLabels() {
@@ -487,31 +534,64 @@ public class SceneManager {
 		VBox rootPane = new VBox(30);
 		rootPane.setAlignment(Pos.CENTER);
 		rootPane.setPadding(new Insets(30));
-		rootPane.setStyle("-fx-background-color: #f4f6f7;");
+		// rootPane.setStyle("-fx-background-color: #f4f6f7;");
+		
+		 // --- THÊM ẢNH NỀN CHO ROOTPANE ---
+	    String imagePathForSelectHumans = "/background/mainmenu.jpg"; // << THAY BẰNG TÊN FILE VÀ ĐƯỜNG DẪN CỦA BẠN
+	    try {
+	        String imageUrl = getClass().getResource(imagePathForSelectHumans).toExternalForm();
+	        if (imageUrl != null) {
+	            rootPane.setStyle(
+	                "-fx-background-image: url('" + imageUrl + "'); " +
+	                "-fx-background-repeat: no-repeat; " +
+	                "-fx-background-position: center center; " +
+	                "-fx-background-size: cover;" // Phủ kín
+	            );
+	        } else {
+	            System.err.println("Lỗi: Không tìm thấy file ảnh nền cho Select Humans Scene: " + imagePathForSelectHumans);
+	            rootPane.setStyle("-fx-background-color: #ECEFF1;"); // Màu nền dự phòng
+	        }
+	    } catch (Exception e) {
+	        System.err.println("Ngoại lệ khi lấy URL ảnh nền Select Humans Scene: " + imagePathForSelectHumans + ". " + e.getMessage());
+	        rootPane.setStyle("-fx-background-color: #ECEFF1;"); // Màu nền dự phòng
+	    }
 
-		Label title = new Label("Chọn Số Người Chơi Thật");
-		title.setFont(Font.font("Arial", FontWeight.BLACK, 28));
-		title.setTextFill(javafx.scene.paint.Color.web("#1A237E"));
-
+	    Label title = new Label("Chọn Số Người Chơi Thật");
+	    title.setFont(Font.font("Arial", FontWeight.BLACK, 30)); // Font đậm hơn, màu sắc tùy chỉnh cho phù hợp nền
+	    title.setTextFill(javafx.scene.paint.Color.WHITE); // Ví dụ chữ trắng nếu nền tối
+	    // Thêm hiệu ứng đổ bóng cho chữ nếu cần để dễ đọc hơn trên nền ảnh
+	    javafx.scene.effect.DropShadow dsText = new javafx.scene.effect.DropShadow();
+	    dsText.setRadius(3);
+	    dsText.setOffsetX(1);
+	    dsText.setOffsetY(1);
+	    dsText.setColor(javafx.scene.paint.Color.rgb(0, 0, 0, 0.7));
+	    title.setEffect(dsText);
+	    
 		// -- Khu vực hiển thị và thay đổi số lượng --
-		HBox selectorBox = new HBox(20);
-		selectorBox.setAlignment(Pos.CENTER);
+	    VBox contentPanel = new VBox(20); // Panel chứa các control chính
+	    contentPanel.setAlignment(Pos.CENTER);
+	    contentPanel.setPadding(new Insets(20));
+	    contentPanel.setStyle("-fx-background-color: rgba(0, 0, 0, 0.3); -fx-background-radius: 10;"); // Nền đen mờ ví dụ
 
-		Button decrementButton = new Button("-");
-		decrementButton.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-		decrementButton.setPrefSize(60, 60);
-		styleSubSceneNavButton(decrementButton, "#bdc3c7", "#95a5a6");
+	    HBox selectorBox = new HBox(20);
+	    selectorBox.setAlignment(Pos.CENTER);
 
-		largeHumanCountDisplay_InSubScene = new Label(String.valueOf(this.tempSelectedHumanPlayers));
-		largeHumanCountDisplay_InSubScene.setFont(Font.font("Arial", FontWeight.BOLD, 72)); // Label to
-		largeHumanCountDisplay_InSubScene.setTextFill(javafx.scene.paint.Color.web("#2980b9"));
-		largeHumanCountDisplay_InSubScene.setMinWidth(100); // Đảm bảo có không gian
-		largeHumanCountDisplay_InSubScene.setAlignment(Pos.CENTER);
+	    Button decrementButton = new Button("-");
+	    decrementButton.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+	    decrementButton.setPrefSize(60, 60);
+	    styleSubSceneNavButton(decrementButton, "#bdc3c7", "#95a5a6");
 
-		Button incrementButton = new Button("+");
-		incrementButton.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-		incrementButton.setPrefSize(60, 60);
-		styleSubSceneNavButton(incrementButton, "#bdc3c7", "#95a5a6");
+	    largeHumanCountDisplay_InSubScene = new Label(String.valueOf(this.tempSelectedHumanPlayers));
+	    largeHumanCountDisplay_InSubScene.setFont(Font.font("Arial", FontWeight.BOLD, 72));
+	    largeHumanCountDisplay_InSubScene.setTextFill(javafx.scene.paint.Color.WHITE); // Chữ trắng
+	    largeHumanCountDisplay_InSubScene.setEffect(dsText); // Áp dụng bóng cho dễ đọc
+	    largeHumanCountDisplay_InSubScene.setMinWidth(100);
+	    largeHumanCountDisplay_InSubScene.setAlignment(Pos.CENTER);
+
+	    Button incrementButton = new Button("+");
+	    incrementButton.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+	    incrementButton.setPrefSize(60, 60);
+	    styleSubSceneNavButton(incrementButton, "#bdc3c7", "#95a5a6");
 
 		// Logic cho nút +/-
 		decrementButton.setOnAction(e -> {
@@ -530,8 +610,8 @@ public class SceneManager {
 		selectorBox.getChildren().addAll(decrementButton, largeHumanCountDisplay_InSubScene, incrementButton);
 
 		// -- Nút xác nhận --
-		Button confirmButton = new Button("Xác Nhận");
-		styleSubSceneNavButton(confirmButton, "#2ecc71", "#27ae60");
+		 Button confirmButton = new Button("Xác Nhận");
+		    styleSubSceneNavButton(confirmButton, "#FF8C00", "#FFA500");
 		confirmButton.setOnAction(e -> {
 			this.numberOfHumanPlayers = this.tempSelectedHumanPlayers; // Cập nhật giá trị chính
 			// this.numberOfAIPlayers = FIXED_TOTAL_PLAYERS - this.numberOfHumanPlayers; //
@@ -540,11 +620,13 @@ public class SceneManager {
 		});
 		VBox.setMargin(confirmButton, new Insets(20, 0, 0, 0));
 
-		rootPane.getChildren().addAll(title, selectorBox, confirmButton);
-		Scene scene = new Scene(rootPane);
-		primaryStage.setScene(scene);
-		  forceMaximize();
-		primaryStage.setTitle("Chọn Số Người Chơi");
+	    contentPanel.getChildren().addAll(selectorBox, confirmButton); // Thêm vào contentPanel
+	    rootPane.getChildren().addAll(title, contentPanel); // Thêm title và contentPanel vào rootPane
+
+	    Scene scene = new Scene(rootPane);
+	    primaryStage.setScene(scene);
+	    // forceMaximize(); // Sẽ được gọi bởi listener
+	    primaryStage.setTitle("Chọn Số Người Chơi");
 	}
 
 	public void showSelectAIStrategyScene() {
@@ -554,12 +636,36 @@ public class SceneManager {
 	    VBox rootPane = new VBox(25); // Giảm khoảng cách một chút nếu cần
 	    rootPane.setAlignment(Pos.CENTER);
 	    rootPane.setPadding(new Insets(40)); // Tăng padding
-	    rootPane.setStyle("-fx-background-color: #f8f9fa;"); // Màu nền sáng hơn một chút
+	    // rootPane.setStyle("-fx-background-color: #f8f9fa;"); // Màu nền sáng hơn một chút
+	    
+	    String imagePathForSelectAI = "/background/mainmenu.jpg"; // << THAY BẰNG TÊN FILE VÀ ĐƯỜNG DẪN CỦA BẠN
+	    try {
+	        String imageUrl = getClass().getResource(imagePathForSelectAI).toExternalForm();
+	        if (imageUrl != null) {
+	            rootPane.setStyle(
+	                "-fx-background-image: url('" + imageUrl + "'); " +
+	                "-fx-background-repeat: no-repeat; " +
+	                "-fx-background-position: center center; " +
+	                "-fx-background-size: cover;" // Phủ kín
+	            );
+	        } else {
+	            System.err.println("Lỗi: Không tìm thấy file ảnh nền cho Select AI Scene: " + imagePathForSelectAI);
+	            rootPane.setStyle("-fx-background-color: #ECEFF1;"); // Màu nền dự phòng
+	        }
+	    } catch (Exception e) {
+	        System.err.println("Ngoại lệ khi lấy URL ảnh nền Select AI Scene: " + imagePathForSelectAI + ". " + e.getMessage());
+	        rootPane.setStyle("-fx-background-color: #ECEFF1;"); // Màu nền dự phòng
+	    }
 
 	    Label title = new Label("Chọn Chiến Lược Cho AI");
-	    title.setFont(Font.font("Arial", FontWeight.BOLD, 32)); // Font to, rõ ràng
-	    title.setTextFill(javafx.scene.paint.Color.web("#2c3e50"));
-	    VBox.setMargin(title, new Insets(0, 0, 30, 0)); // Khoảng cách dưới tiêu đề
+	    title.setFont(Font.font("Arial", FontWeight.BOLD, 32));
+	    title.setTextFill(javafx.scene.paint.Color.WHITE); // Ví dụ chữ trắng
+	    // Thêm hiệu ứng đổ bóng cho chữ nếu cần
+	    javafx.scene.effect.DropShadow dsText = new javafx.scene.effect.DropShadow();
+	    dsText.setRadius(3); dsText.setOffsetX(1); dsText.setOffsetY(1);
+	    dsText.setColor(javafx.scene.paint.Color.rgb(0,0,0,0.7));
+	    title.setEffect(dsText);
+	    VBox.setMargin(title, new Insets(0, 0, 30, 0));
 
 	    // --- Container cho các Label chọn chiến lược ---
 	    VBox strategyLabelsContainer = new VBox(18); // Khoảng cách giữa các label
@@ -587,14 +693,17 @@ public class SceneManager {
 	    // --- Định nghĩa Styles ---
 	    // Có thể chuyển các style này vào file CSS riêng nếu muốn
 	    final String normalStyle = "-fx-font-family: 'Arial'; -fx-font-size: 22px; " +
-	                         "-fx-padding: 12px 25px; -fx-border-color: #adb5bd; -fx-border-width: 1.5px; " +
-	                         "-fx-border-radius: 8; -fx-background-radius: 8; -fx-background-color: #e9ecef; " +
-	                         "-fx-text-fill: #495057; -fx-alignment: center; -fx-cursor: hand; -fx-pref-width: 300px;";
+                "-fx-padding: 12px 25px; -fx-border-color: #FFD700; -fx-border-width: 1px; " + // Viền vàng mỏng
+                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-background-color: #2C3E50; " + // Nền xám than/xanh navy đậm
+                "-fx-text-fill: white; " + // Chữ màu trắng
+                "-fx-alignment: center; -fx-cursor: hand; -fx-pref-width: 320px;"; // Tăng chiều rộng nếu cần
+
 	    final String selectedStyle = "-fx-font-family: 'Arial'; -fx-font-size: 24px; " +
-	                           "-fx-padding: 12px 25px; -fx-border-color: #0056b3; -fx-border-width: 2.5px; " +
-	                           "-fx-border-radius: 8; -fx-background-radius: 8; -fx-background-color: #cce5ff; " +
-	                           "-fx-text-fill: #004085; -fx-font-weight: bold; -fx-alignment: center; -fx-cursor: hand; -fx-pref-width: 300px;" +
-	                           "-fx-effect: dropshadow(gaussian, rgba(0,91,187,0.4), 10, 0.3, 0, 0);";
+                  "-fx-padding: 12px 25px; -fx-border-color: #FFFFFF; -fx-border-width: 2.5px; " + // Viền trắng nổi bật
+                  "-fx-border-radius: 8; -fx-background-radius: 8; -fx-background-color: #B8860B; " + // Nền vàng đồng (DarkGoldenrod) khi được chọn
+                  "-fx-text-fill: white; " + // Chữ màu trắng
+                  "-fx-font-weight: bold; -fx-alignment: center; -fx-cursor: hand; -fx-pref-width: 320px;" +
+                  "-fx-effect: dropshadow(gaussian, #FFD700, 15, 0.4, 0, 0);"; // Bóng đổ màu vàng gold
 
 
 	    // --- Hàm cập nhật style cho các Label ---
@@ -624,7 +733,7 @@ public class SceneManager {
 
 	    // --- Nút Xác Nhận ---
 	    Button confirmButton = new Button("Xác Nhận");
-	    styleSubSceneNavButton(confirmButton, "#28a745", "#218838"); // Màu xanh lá cây cho nút xác nhận
+	    styleSubSceneNavButton(confirmButton, "#FF8C00", "#FFA500");
 	    confirmButton.setPrefWidth(200); // Đồng bộ chiều rộng
 	    VBox.setMargin(confirmButton, new Insets(35, 0, 0, 0)); // Tăng margin trên
 
@@ -689,14 +798,22 @@ public class SceneManager {
 		sceneTitleLabel.setAlignment(Pos.CENTER);
 		sceneTitleLabel.setMaxWidth(Double.MAX_VALUE);
 
-		// --- Fixed Total Players Display ---
-		Label fixedTotalPlayersDisplayLabel = new Label(
-				"Tổng số người chơi trong ván: " + FIXED_TOTAL_PLAYERS + " (cố định)");
-		fixedTotalPlayersDisplayLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 16));
-		fixedTotalPlayersDisplayLabel.setTextFill(javafx.scene.paint.Color.web("#555555"));
-		VBox.setMargin(fixedTotalPlayersDisplayLabel, new Insets(0, 0, 20, 0));
-		fixedTotalPlayersDisplayLabel.setAlignment(Pos.CENTER);
-		fixedTotalPlayersDisplayLabel.setMaxWidth(Double.MAX_VALUE);
+		Label fixedTotalPlayersDisplayLabel = new Label("Tổng người chơi: " + FIXED_TOTAL_PLAYERS + " (cố định)");
+		fixedTotalPlayersDisplayLabel.setFont(Font.font("Arial", FontWeight.BLACK, 17)); // Font Arial, rất đậm, size 17
+		fixedTotalPlayersDisplayLabel.setTextFill(javafx.scene.paint.Color.WHITE);      // Chữ màu trắng
+
+	    // Thêm hiệu ứng đổ bóng để chữ dễ đọc hơn trên nền phức tạp
+	    javafx.scene.effect.DropShadow dsFixed = new javafx.scene.effect.DropShadow();
+	    dsFixed.setRadius(3);
+	    dsFixed.setOffsetX(1.0);
+	    dsFixed.setOffsetY(1.0);
+	    dsFixed.setColor(javafx.scene.paint.Color.rgb(0, 0, 0, 0.75)); // Bóng đen mờ
+	    fixedTotalPlayersDisplayLabel.setEffect(dsFixed);
+
+	    // Các thuộc tính khác giữ nguyên
+	    fixedTotalPlayersDisplayLabel.setMaxWidth(Double.MAX_VALUE);
+	    fixedTotalPlayersDisplayLabel.setAlignment(Pos.CENTER);
+	    VBox.setMargin(fixedTotalPlayersDisplayLabel, new Insets(0, 0, 20, 0));
 
 		// --- GridPane for Settings ---
 		GridPane settingsGrid = new GridPane();
@@ -735,7 +852,7 @@ public class SceneManager {
 
 		aiPlayersDisplayLabel = new Label(); // Label này chỉ hiển thị số, đã khai báo là biến thành viên
 		aiPlayersDisplayLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16)); // Làm nổi bật số AI
-		aiPlayersDisplayLabel.setTextFill(javafx.scene.paint.Color.web("#2980b9")); // Màu khác cho số AI
+		aiPlayersDisplayLabel.setTextFill(javafx.scene.paint.Color.web("#FFFFFF")); // Màu khác cho số AI
 		settingsGrid.add(aiCountTextLabel, 0, 1);
 		settingsGrid.add(aiPlayersDisplayLabel, 1, 1);
 
@@ -784,8 +901,8 @@ public class SceneManager {
 
 	// Hàm helper để style Label trong GridPane
 	private void styleSettingsLabel(Label label) {
-		label.setFont(Font.font("Arial", FontWeight.BLACK, 16));
-		label.setTextFill(javafx.scene.paint.Color.web("#2c3e50"));
+		label.setFont(Font.font("Arial", FontWeight.BOLD, 17)); // Giữ đậm và size 17
+	    label.setTextFill(javafx.scene.paint.Color.WHITE);
 	}
 
 	// Hàm helper để style ChoiceBox
@@ -793,7 +910,7 @@ public class SceneManager {
 		choiceBox.setPrefWidth(200); // Chiều rộng đồng nhất
 		choiceBox.setStyle("-fx-font-size: 14px; " + "-fx-background-color: #f8f9fa; " + // Màu nền sáng hơn
 				"-fx-border-color: #ced4da; " + "-fx-border-radius: 5; " + "-fx-background-radius: 5;"
-				+ "-fx-mark-color: #2980b9;" // Màu mũi tên dropdown
+				+ "-fx-mark-color: #FFFFFF;" // Màu mũi tên dropdown
 		);
 	}
 

@@ -81,13 +81,41 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         playerPanels = new HashMap<>();
         rootLayout = new BorderPane();
         rootLayout.setPadding(new Insets(20));
+        
+        String imagePathForGameScreen = "/background/mm2.jpg"; // << THAY BẰNG ĐƯỜNG DẪN CỦA BẠN
+        try {
+            // Sử dụng getClass().getResource() thay vì CardView.class.getResource()
+            // nếu CardView là inner class hoặc bạn muốn đường dẫn rõ ràng từ gốc classpath
+            String imageUrl = getClass().getResource(imagePathForGameScreen).toExternalForm();
+            if (imageUrl != null) {
+                rootLayout.setStyle(
+                    "-fx-background-image: url('" + imageUrl + "'); " +
+                    "-fx-background-repeat: no-repeat; " +
+                    "-fx-background-position: center center; " +
+                    "-fx-background-size: cover;" // Phủ kín toàn bộ Pane
+                );
+            } else {
+                System.err.println("Lỗi: Không tìm thấy file ảnh nền cho GameScreen: " + imagePathForGameScreen);
+                rootLayout.setStyle("-fx-background-color: #333333;"); // Màu nền tối dự phòng
+            }
+        } catch (Exception e) {
+            System.err.println("Ngoại lệ khi lấy URL ảnh nền GameScreen: " + imagePathForGameScreen + ". " + e.getMessage());
+            rootLayout.setStyle("-fx-background-color: #333333;"); // Màu nền tối dự phòng
+        }
+        
 
         // --- Message Panel (TOP) ---
         messageBox = new VBox();
         messageLabel = new Label("Chào mừng bạn đến với Tiến Lên Miền Nam!");
         messageLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        messageLabel.setTextFill(javafx.scene.paint.Color.WHITE);
+        
         messageBox.setAlignment(Pos.CENTER);
         messageBox.getChildren().add(messageLabel);
+        messageBox.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-radius: 10;"
+            );
         rootLayout.setTop(messageBox);
         BorderPane.setMargin(messageBox, new Insets(0, 0, 20, 0));
 
@@ -95,8 +123,10 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         VBox allPlayersInfoBox = new VBox(15);
         allPlayersInfoBox.setPadding(new Insets(10));
         allPlayersInfoBox.setAlignment(Pos.TOP_CENTER);
-        allPlayersInfoBox.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #f0f0f0;");
-        
+        allPlayersInfoBox.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-radius: 10;"
+            );
         allPlayersInfoBox.setPrefWidth(200);
         allPlayersInfoBox.setMinWidth(180);
         allPlayersInfoBox.setMaxWidth(250);
@@ -115,8 +145,10 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
             VBox playerPanel = new VBox(5);
             playerPanel.setPadding(new Insets(10));
             playerPanel.setAlignment(Pos.CENTER);
-            playerPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
-            
+            playerPanel.setStyle(
+                    "-fx-background-color: rgba(255, 255, 255, 1);" + // Nền trắng mờ 70% đục
+                            "-fx-background-radius: 10;"
+                        );
             playerPanel.setPrefWidth(180);
             playerPanel.setMinWidth(150); 
             
@@ -127,6 +159,8 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
                 nameLabel = new Label(p.getName());
             }
             nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            nameLabel.setTextFill(javafx.scene.paint.Color.WHITE);
+            
             Label cardsCountLabel = new Label("Bài: " + p.getHand().size());
             playerPanel.getChildren().addAll(nameLabel, cardsCountLabel);
 
@@ -143,16 +177,21 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         VBox playedCardsContainer = new VBox(5);
         playedCardsContainer.setAlignment(Pos.CENTER);
         playedCardsContainer.setPadding(new Insets(20));
-        playedCardsContainer.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #f0f0f0;");
-        
+        playedCardsContainer.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0);" + // Nền trắng mờ 70% đục
+                "-fx-background-radius: 10;"
+            );
         Label playedCardsTitle = new Label("Bài trên bàn");
         playedCardsTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        playedCardsTitle.setTextFill(javafx.scene.paint.Color.WHITE); // <--- THÊM DÒNG NÀY
         
         playedCardsBox = new HBox(5);
         playedCardsBox.setAlignment(Pos.CENTER);
         playedCardsBox.setPadding(new Insets(10));
-        playedCardsBox.setStyle("-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #e0e0e0;");
-        
+        playedCardsBox.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-radius: 10;"
+            );
         playedCardsContainer.getChildren().addAll(playedCardsTitle, playedCardsBox);
         rootLayout.setCenter(playedCardsContainer);
         BorderPane.setMargin(playedCardsContainer, new Insets(0, 0, 20, 0)); 
@@ -161,10 +200,13 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         VBox humanHandDisplayContainer = new VBox(5); 
         humanHandDisplayContainer.setAlignment(Pos.CENTER);
         humanHandDisplayContainer.setPadding(new Insets(10));
-        humanHandDisplayContainer.setStyle("-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f0f0ff;");
-
+        humanHandDisplayContainer.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-radius: 10;"
+            );
         Label humanHandTitle = new Label("Bài của bạn");
         humanHandTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        humanHandTitle.setTextFill(javafx.scene.paint.Color.WHITE);
         
         playerHandBox = new HBox(5);
         playerHandBox.setAlignment(Pos.CENTER);
@@ -177,8 +219,10 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         controlBox = new VBox(20);
         controlBox.setAlignment(Pos.CENTER);
         controlBox.setPadding(new Insets(20, 10, 20, 10));
-        controlBox.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #e8e8e8;");
-
+        controlBox.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-radius: 10;"
+            );
         controlBox.setPrefWidth(150);
         controlBox.setMaxWidth(180);
 
@@ -288,15 +332,24 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
 
                     // Chỉ thay đổi style nếu game chưa kết thúc, nếu kết thúc thì giữ nguyên hoặc đặt style cố định
                     if (game.getGeneralGameState() != Game.GeneralGameState.GAME_OVER && game.getCurrentPlayer() == p) {
-                        playerPanel.setStyle("-fx-border-color: blue; -fx-border-width: 3; -fx-border-radius: 5; -fx-background-color: #e0e0ff;");
+                        playerPanel.setStyle(
+                                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                                        "-fx-background-radius: 10;"
+                                    );
                         nameLabel.setText(p.getName() + (p.isAI() ? " (AI) - Lượt!" : " (Bạn) - Lượt!"));
                         nameLabel.setTextFill(Color.BLUE);
                     } else if (game.getGeneralGameState() != Game.GeneralGameState.GAME_OVER) { // Game đang chạy nhưng không phải lượt người này
-                        playerPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
+                        playerPanel.setStyle(
+                                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                                        "-fx-background-radius: 10;"
+                                    );
                         nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : ""));
                         nameLabel.setTextFill(Color.BLACK);
                     } else { // Game đã kết thúc, có thể không cần thay đổi style hoặc đặt style mặc định cho tất cả
-                         playerPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
+                         playerPanel.setStyle(
+                                 "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                                         "-fx-background-radius: 10;"
+                                     );
                          nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : ""));
                          nameLabel.setTextFill(Color.BLACK);
                     }
@@ -465,7 +518,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         static {
             try {
                 // Thay "card_back" bằng tên file ảnh mặt sau của bạn
-                String cardBackPath = CARD_IMAGE_PATH_PREFIX + "card_back" + CARD_IMAGE_EXTENSION;
+                String cardBackPath = CARD_IMAGE_PATH_PREFIX + "BACK" + CARD_IMAGE_EXTENSION;
                 CARD_BACK_IMAGE = new Image(CardView.class.getResourceAsStream(cardBackPath));
                 if (CARD_BACK_IMAGE.isError()) {
                      System.err.println("Lỗi tải ảnh mặt sau: " + cardBackPath);
