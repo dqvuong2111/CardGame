@@ -14,6 +14,9 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -442,46 +445,150 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         return null;
     }
 
-    class CardView extends StackPane {
+    public class CardView extends StackPane { // CardView vẫn là StackPane
         private Card card;
         private boolean selected;
-        private Rectangle backgroundRect;
-        private Label cardLabel;
+        private ImageView cardImageView; // Để hiển thị ảnh quân bài
+
+        // Kích thước mong muốn của quân bài (nên khớp với tỉ lệ ảnh của bạn)
+        private static final double CARD_WIDTH = 80;
+        private static final double CARD_HEIGHT = 110;
+
+        // Đường dẫn tới thư mục chứa ảnh trong resources (bắt đầu bằng "/")
+        private static final String CARD_IMAGE_PATH_PREFIX = "/cards/"; // QUAN TRỌNG: Điều chỉnh nếu cần
+        private static final String CARD_IMAGE_EXTENSION = ".png"; // Hoặc .jpg, .gif tùy loại ảnh
+
+        private static Image CARD_BACK_IMAGE = null; // Cache ảnh mặt sau
+        // private static Image ERROR_IMAGE = null; // Cache ảnh lỗi (tùy chọn)
+
+        // Khối static để tải ảnh chung một lần
+        static {
+            try {
+                // Thay "card_back" bằng tên file ảnh mặt sau của bạn
+                String cardBackPath = CARD_IMAGE_PATH_PREFIX + "card_back" + CARD_IMAGE_EXTENSION;
+                CARD_BACK_IMAGE = new Image(CardView.class.getResourceAsStream(cardBackPath));
+                if (CARD_BACK_IMAGE.isError()) {
+                     System.err.println("Lỗi tải ảnh mặt sau: " + cardBackPath);
+                     CARD_BACK_IMAGE = null; // Đặt là null nếu lỗi
+                }
+            } catch (Exception e) {
+                System.err.println("Ngoại lệ khi tải ảnh mặt sau: " + e.getMessage());
+            }
+            // Tương tự, bạn có thể tải một ảnh lỗi mặc định ở đây nếu muốn
+        }
 
         public CardView(Card card) {
             this.card = card;
             this.selected = false;
-            
-            backgroundRect = new Rectangle(80, 110);
-            backgroundRect.setFill(Color.WHITE);
-            backgroundRect.setStroke(Color.BLACK);
-            backgroundRect.setArcWidth(10);
-            backgroundRect.setArcHeight(10);
 
+            cardImageView = new ImageView();
+            cardImageView.setFitWidth(CARD_WIDTH);
+            cardImageView.setFitHeight(CARD_HEIGHT);
+            // cardImageView.setPreserveRatio(true); // Nên giữ để ảnh không bị méo nếu kích thước không chuẩn
+            cardImageView.setSmooth(true);         // Cho ảnh mượt hơn khi co giãn
+
+            loadImage(); // Tải ảnh cho quân bài cụ thể
+
+            this.setPrefSize(CARD_WIDTH, CARD_HEIGHT); // Kích thước của CardView
+            this.getChildren().add(cardImageView);
+            this.setAlignment(Pos.CENTER);
+
+            // Loại bỏ getChildren().addAll(backgroundRect, cardLabel);
+            // updateSelectionBorder() sẽ được thay bằng updateSelectionVisuals()
+            updateSelectionVisuals(); // Áp dụng hiệu ứng chọn/không chọn ban đầu
+        }
+
+        private void loadImage() {
+            if (this.card == null) { // Nếu không có card cụ thể, hiển thị mặt sau
+                if (CARD_BACK_IMAGE != null) {
+                    cardImageView.setImage(CARD_BACK_IMAGE);
+                } else {
+                    // Xử lý khi không có cả ảnh mặt sau (ví dụ: để trống hoặc màu nền)
+                    System.err.println("Không có Card và không có ảnh mặt sau để hiển thị.");
+                }
+                return;
+            }
+
+            String imageFileName = getCardImageFileName(this.card);
+            if (imageFileName.equals("error_card_name")) { // Nếu getCardImageFileName trả về lỗi
+                displayErrorOrCardBack();
+                return;
+            }
+
+            String fullImagePath = CARD_IMAGE_PATH_PREFIX + imageFileName + CARD_IMAGE_EXTENSION;
+
+            try {
+                Image img = new Image(getClass().getResourceAsStream(fullImagePath));
+                if (img.isError()) {
+                    System.err.println("Lỗi khi tải ảnh (ảnh báo lỗi bên trong Image): " + fullImagePath + " cho quân bài " + this.card);
+                    displayErrorOrCardBack();
+                } else {
+                    cardImageView.setImage(img);
+                }
+            } catch (Exception e) { // NullPointerException nếu không tìm thấy resource, hoặc lỗi khác
+                System.err.println("Không tìm thấy hoặc lỗi tải file ảnh: " + fullImagePath + " cho quân bài " + this.card + ". Lỗi: " + e.getMessage());
+                displayErrorOrCardBack();
+            }
+        }
+
+        private void displayErrorOrCardBack() {
+            // Ưu tiên hiển thị ảnh lỗi nếu có, nếu không thì hiển thị mặt sau
+            // if (ERROR_IMAGE != null) cardImageView.setImage(ERROR_IMAGE);
+            if (CARD_BACK_IMAGE != null) {
+                 cardImageView.setImage(CARD_BACK_IMAGE);
+            } else {
+                // Cuối cùng, nếu không có gì cả, bạn có thể làm gì đó khác, ví dụ:
+                // cardImageView.setImage(null); // Để trống
+                // setStyle("-fx-background-color: lightgrey; -fx-border-color: black;"); // Hiện hình chữ nhật xám
+                System.err.println("Không thể hiển thị ảnh lỗi hoặc mặt sau.");
+            }
+        }
+
+        /**
+         * Chuyển đổi Card thành tên file ảnh.
+         * QUAN TRỌNG: Logic này phải khớp 100% với cách bạn đặt tên file ảnh.
+         * Ví dụ quy ước tên file: RankSuit.png (ví dụ: AS.png, KH.png, TC.png, 2D.png)
+         */
+        private String getCardImageFileName(Card c) {
             String rankStr;
-            if(card.getRank().getValue() == 15) {
-                rankStr = "2" + card.suitToString();
-            } else if (card.getRank().getValue() == 14) {
-                rankStr = "A" + card.suitToString();
-            } else if (card.getRank().getValue() == 13) {
-                rankStr = "K" + card.suitToString();
-            } else if (card.getRank().getValue() == 12) {
-                rankStr = "Q" + card.suitToString();
-            } else if (card.getRank().getValue() == 11) {
-                rankStr = "J" + card.suitToString();
+            int rankValue = c.getRank().getValue(); // Lấy giá trị rank từ Card object
+
+            // Logic chuyển đổi rank value sang ký tự cho tên file
+            // (Điều chỉnh các case cho phù hợp với getValue() của bạn)
+            switch (rankValue) {
+                case 2: rankStr = "2"; break; // Heo (2)
+                case 14: rankStr = "A"; break; // Át
+                case 13: rankStr = "K"; break; // Già
+                case 12: rankStr = "Q"; break; // Đầm
+                case 11: rankStr = "J"; break; // Bồi
+                case 10: rankStr = "10"; break; // Mười (T for Ten)
+                case 9: rankStr = "9"; break;
+                case 8: rankStr = "8"; break;
+                case 7: rankStr = "7"; break;
+                case 6: rankStr = "6"; break;
+                case 5: rankStr = "5"; break;
+                case 4: rankStr = "4"; break;
+                case 3: rankStr = "3"; break;
+                // Nếu bạn có quân 2 thường (không phải Heo) và giá trị là 2:
+                // case 2: rankStr = "2"; break; 
+                default:
+                    System.err.println("Rank không hợp lệ cho tên file ảnh: " + rankValue);
+                    return "error_card_name"; // Trả về một tên file báo lỗi
             }
-            else {
-                rankStr = card.getRank().getValue() + card.suitToString();
+
+            String suitStr;
+            // Giả sử card.getSuit() trả về một enum Card.Suit.HEARTS, Card.Suit.DIAMONDS, etc.
+            switch (c.getSuit()) {
+                case HEARTS: suitStr = "H"; break;   // Cơ
+                case DIAMONDS: suitStr = "D"; break; // Rô
+                case CLUBS: suitStr = "C"; break;    // Tép (Chuồn)
+                case SPADES: suitStr = "S"; break;   // Bích
+                default:
+                    System.err.println("Suit không hợp lệ cho tên file ảnh: " + c.getSuit());
+                    return "error_card_name";
             }
 
-            cardLabel = new Label(rankStr);
-            Color suitColor = (card.getSuit() == Card.Suit.HEARTS || card.getSuit() == Card.Suit.DIAMONDS) ? Color.RED : Color.BLACK;
-            cardLabel.setTextFill(suitColor);
-            cardLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-
-            getChildren().addAll(backgroundRect, cardLabel);
-
-            updateSelectionBorder();
+            return rankStr +"-"+ suitStr; // Ví dụ: "AH", "2S", "KC"
         }
 
         public boolean isSelected() {
@@ -490,19 +597,37 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
 
         public void setSelected(boolean selected) {
             this.selected = selected;
-            updateSelectionBorder();
+            updateSelectionVisuals(); // Gọi hàm cập nhật giao diện mới
         }
 
-        private void updateSelectionBorder() {
+        // Thay thế updateSelectionBorder() bằng updateSelectionVisuals()
+        private void updateSelectionVisuals() {
             if (selected) {
-                backgroundRect.setStroke(Color.BLUE);
-                backgroundRect.setStrokeWidth(3);
-                backgroundRect.setFill(new Color(0, 0, 1, 0.2));
+                // Ví dụ: thêm hiệu ứng đổ bóng màu xanh dương để làm nổi bật
+                DropShadow glowEffect = new DropShadow();
+                glowEffect.setColor(Color.rgb(0, 120, 255, 0.8)); // Màu xanh dương sáng, hơi trong suốt
+                glowEffect.setWidth(25);  // Độ rộng của bóng
+                glowEffect.setHeight(25); // Độ cao của bóng
+                glowEffect.setRadius(10); // Bán kính mờ của bóng
+                glowEffect.setSpread(0.5); // Độ lan tỏa của bóng (0 đến 1)
+                cardImageView.setEffect(glowEffect);
+
+                // Hoặc bạn có thể dùng lại hiệu ứng nhấc quân bài lên:
+                // this.setTranslateY(-10); // Nhấc CardView lên 10 pixels
+
+                // Hoặc vẽ một viền xung quanh (cần thêm một Rectangle vào StackPane và quản lý visibility)
+                // Ví dụ:
+                // selectionRectangle.setVisible(true);
             } else {
-                backgroundRect.setStroke(Color.BLACK);
-                backgroundRect.setStrokeWidth(1);
-                backgroundRect.setFill(Color.WHITE);
+                cardImageView.setEffect(null); // Bỏ hiệu ứng đổ bóng
+                // this.setTranslateY(0); // Trả về vị trí cũ
+                // selectionRectangle.setVisible(false);
             }
+        }
+
+        // Giữ lại getter cho Card nếu cần
+        public Card getCard() {
+            return this.card;
         }
     }
 }
