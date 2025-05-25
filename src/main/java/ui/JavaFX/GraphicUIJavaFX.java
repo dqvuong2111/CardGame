@@ -43,21 +43,32 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
     private Button passButton;
     private Button playButton;
     private Button newGameButton;
+    private Button backToMainMenuButton; // Khai báo nút mới
+    private SceneManager sceneManager;   // Tham chiếu đến SceneManager
 
     private List<Card> selectedCards = new ArrayList<>();
     private volatile boolean waitingForInput = false;
 
     private Map<TienLenPlayer, VBox> playerPanels;
 
-    public GraphicUIJavaFX(TienLenMienNamGame game, Stage primaryStage) {
-        super(game, primaryStage); // Now the super constructor does less
+    public GraphicUIJavaFX(TienLenMienNamGame game, Stage primaryStage, SceneManager sceneManager) {
+        super(game, primaryStage);
+        this.sceneManager = sceneManager; // Lưu tham chiếu
 
-        this.root = initGUI(); // Initialize the 'root' field from the superclass. initGUI() is called ONCE.
-        this.currentScene = new Scene(this.root); // Initialize the 'currentScene' field from the superclass.
+        // Các phần khởi tạo UI khác của bạn
+        this.root = initGUI(); // initGUI() sẽ tạo giao diện và cả nút mới
+        if (this.root == null) {
+            System.err.println("Lỗi: initGUI() trả về root là null trong GraphicUIJavaFX constructor.");
+            Platform.exit();
+            return;
+        }
+        this.currentScene = new Scene(this.root);
+        primaryStage.setScene(this.currentScene);
+        // SceneManager sẽ lo việc setTitle và forceMaximize thông qua sceneProperty listener
 
-        primaryStage.setScene(this.currentScene); // Set the definitive scene for the game.
-        primaryStage.setMaximized(false);
-        primaryStage.setMaximized(true); // Maximize the stage with this scene.
+        if (game != null) {
+            game.addGameEventListener(this); // Đăng ký lắng nghe sự kiện từ game
+        }
     }
 
 
@@ -183,8 +194,27 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         newGameButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         newGameButton.setOnAction(event -> handleNewGameButton());
         newGameButton.setDisable(true);
+        
+        backToMainMenuButton = new Button("Về Menu Chính");
+        backToMainMenuButton.setMaxWidth(Double.MAX_VALUE);
+        backToMainMenuButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backToMainMenuButton.setOnAction(event -> handleNewGameButton());
+        backToMainMenuButton.setDisable(true);
+        backToMainMenuButton.setOnAction(event -> {
+            if (this.sceneManager != null) {
+                // Bạn có thể muốn dừng game hiện tại hoàn toàn ở đây nếu cần,
+                // ví dụ: this.game.stopGameLoop();
+                // Hoặc để SceneManager.stopCurrentGame() xử lý khi showMainMenu().
+                this.sceneManager.showMainMenu();
+            } else {
+                System.err.println("Lỗi: SceneManager là null trong GraphicUIJavaFX.");
+                // Có thể hiển thị Alert lỗi
+            }
+        });
+        backToMainMenuButton.setDisable(true); // Ban đầu vô hiệu hóa
 
-        controlBox.getChildren().addAll(playButton, passButton, newGameButton);
+        controlBox.getChildren().addAll(playButton, passButton, newGameButton, backToMainMenuButton);
+        rootLayout.setRight(controlBox);
         rootLayout.setRight(controlBox);
         System.out.println("initGUI finished. RootLayout has " + rootLayout.getChildren().size() + " children.");
         return rootLayout;
@@ -279,7 +309,6 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
                 playButton.setDisable(true);
                 passButton.setDisable(true);
                 System.out.println("updateGameState: Game Over - Nút Đánh bài và Bỏ lượt đã bị vô hiệu hóa.");
-
                 playerHandBox.getChildren().clear();
                 // Hiển thị thông báo phù hợp khi game kết thúc, ví dụ:
                 // messageLabel.setText("Game đã kết thúc! Nhấn 'Ván mới' để chơi lại.");
@@ -314,7 +343,10 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
             }
             // Nút "Ván mới" luôn được cập nhật dựa trên isGameOver
             newGameButton.setDisable(!isGameOver);
+            backToMainMenuButton.setDisable(!isGameOver);
         });
+        
+        
     }
 
     private void handlePlayButton() {

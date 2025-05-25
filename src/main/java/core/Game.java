@@ -107,7 +107,9 @@ public abstract class Game<R extends TienLenVariantRuleSet> {
     }
 
     public void addGameEventListener(GameEventListener listener) {
-        listeners.add(listener);
+        if(!listeners.contains(listener)) {
+        	listeners.add(listener);
+        }
     }
 
     protected void notifyGameStateUpdated() {
