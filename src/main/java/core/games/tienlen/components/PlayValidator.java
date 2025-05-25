@@ -3,9 +3,11 @@ package core.games.tienlen.components;
 import core.Card;
 import core.games.tienlen.TienLenGameContext;
 import core.games.tienlen.TienLenVariantRuleSet; // <<--- SỬ DỤNG INTERFACE NÀY
+import core.games.tienlen.tienlenmiennam.TienLenMienNamRule;
 // import core.games.tienlen.TienLenMienNamRule; // Không cần import trực tiếp TienLenMienNamRule nữa trừ khi có lý do đặc biệt
 import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PlayValidator {
@@ -51,7 +53,29 @@ public class PlayValidator {
                 return false;
             }
         }
+        
+     // --- LOGIC NGĂN CHẶN "THỐI 2" (KHÔNG ĐỂ LẠI TOÀN 2 TRÊN TAY MÀ KHÔNG ĐÁNH ĐƯỢC) ---
+        List<Card> handAfterPlay = new ArrayList<>(currentPlayer.getHand()); // Tạo bản sao tay bài hiện tại
+        handAfterPlay.removeAll(cardsToPlay); // Loại bỏ những lá định đánh
+
+        if (!handAfterPlay.isEmpty()) { // Nếu sau khi đánh, người chơi vẫn còn bài
+            boolean remainingCardsAreAllTwos = true;
+            for (Card card : handAfterPlay) {
+                // Sử dụng TienLenMienNamRule.getTienLenValue(card) == 15 để kiểm tra quân 2
+                if (TienLenMienNamRule.getTienLenValue(card) != 15) {
+                    remainingCardsAreAllTwos = false;
+                    break;
+                }
+            }
+
+            if (remainingCardsAreAllTwos) {
+                // Đây là luật "không được đánh (ra) toàn 2 để thắng":
+            	return false;
+            } // Kết thúc if (remainingCardsAreAllTwos)
+        } // Kết thúc if (!handAfterPlay.isEmpty())
+        
         return true;
+    
     }
 
     public boolean canPlayerPass(TienLenPlayer currentPlayer) {
