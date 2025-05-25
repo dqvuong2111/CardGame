@@ -62,7 +62,7 @@ public class PlayValidator {
             boolean remainingCardsAreAllTwos = true;
             for (Card card : handAfterPlay) {
                 // Sử dụng TienLenMienNamRule.getTienLenValue(card) == 15 để kiểm tra quân 2
-                if (TienLenMienNamRule.getTienLenValue(card) != 15) {
+            	if (ruleSet.getCardRankValue(card) != ruleSet.getTwoRankValue()) {
                     remainingCardsAreAllTwos = false;
                     break;
                 }

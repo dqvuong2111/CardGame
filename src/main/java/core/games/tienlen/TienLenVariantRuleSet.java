@@ -42,8 +42,8 @@ public interface TienLenVariantRuleSet {
     // boolean mustPlaySpecificCardsOnFirstTurn(List<Card> hand);
     // List<Card> getRequiredCardsForFirstGameTurn(List<Card> hand);
     // boolean isValidPlayForFirstGameTurn(List<Card> play, List<Card> hand);
-
-    // Hiện tại, để đơn giản hóa, chúng ta sẽ để logic 3 Bích ở lớp Strategy của Tiến Lên.
-    // Các phương thức của PlayableMoveGenerator sẽ không nhận isFirstTurn cho mục đích 3 Bích nữa,
-    // mà isFirstTurn (của vòng) có thể dùng để xác định việc có được đánh tự do không.
+    
+    int getCardRankValue(Card card); // Trả về giá trị số để so sánh rank
+    int getTwoRankValue();  
+    
 }

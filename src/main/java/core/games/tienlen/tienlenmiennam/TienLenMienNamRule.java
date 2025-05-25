@@ -100,4 +100,14 @@ public class TienLenMienNamRule implements TienLenVariantRuleSet {
         if (cards == null || cards.isEmpty()) return "Không có bài nào";
         return cards.stream().map(Card::toString).collect(Collectors.joining(", "));
     }
+    
+    @Override
+    public int getCardRankValue(Card card) {
+        return getTienLenValue(card); // Hoặc getTienLenBacValue(card)
+    }
+    @Override
+    public int getTwoRankValue() {
+        return 15; // Hoặc giá trị bạn dùng cho quân 2
+    }
+    
 }

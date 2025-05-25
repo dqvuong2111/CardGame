@@ -6,9 +6,13 @@ import core.ai.tienlenai.TienLenAIStrategy;
 import core.ai.tienlenai.strategies.GreedyStrategy;
 import core.ai.tienlenai.strategies.RandomStrategy;
 import core.ai.tienlenai.strategies.SmartStrategy;
+import core.games.tienlen.AbstractTienLenGame;
+import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.tienlen.tienlenmienbac.TienLenMienBacRule;
 import core.games.tienlen.tienlenmiennam.TienLenMienNamGame;
 import core.games.tienlen.tienlenmiennam.TienLenMienNamRule;
 import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.tienlen.tienlenmienbac.TienLenMienBacGame;
 import javafx.application.Platform;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -37,8 +41,23 @@ import java.util.Optional;
 public class SceneManager {
 	private Stage primaryStage;
 	private GraphicUIJavaFX gameGUI;
-	private TienLenMienNamGame currentGame;
+	private AbstractTienLenGame<?> currentGame;
 
+	public enum GameVariant { // Đặt enum này ở nơi phù hợp, có thể là class riêng hoặc trong SceneManager
+	    TIEN_LEN_MIEN_NAM("Tiến Lên Miền Nam"),
+	    TIEN_LEN_MIEN_BAC("Tiến Lên Miền Bắc");
+
+	    private final String displayName;
+	    GameVariant(String displayName) {
+	        this.displayName = displayName;
+	    }
+	    @Override public String toString() { return displayName; }
+	}
+	private GameVariant selectedGameVariant = GameVariant.TIEN_LEN_MIEN_NAM; // Mặc định
+
+	// Có thể cần một ChoiceBox cho việc này trên UI
+	private ChoiceBox<GameVariant> gameVariantChoiceBox_inCustomScene;
+	
 	private static final int FIXED_TOTAL_PLAYERS = 4; // Tổng số người chơi cố định
 	private int numberOfHumanPlayers = 1; // Số người chơi thật, mặc định là 1
 	private int numberOfAIPlayers = FIXED_TOTAL_PLAYERS - numberOfHumanPlayers; // Số AI, tự động tính
@@ -387,6 +406,22 @@ public class SceneManager {
 	    settingsGrid.add(strategyTitleLabel, 0, 2);
 	    settingsGrid.add(currentAIStrategyDisplay, 1, 2);
 	    settingsGrid.add(changeStrategyButton, 2, 2);
+	    
+	    Label gameVariantLabel = new Label("Chọn loại game:");
+	    styleSettingsLabel(gameVariantLabel); // Dùng hàm style đã có
+
+	    gameVariantChoiceBox_inCustomScene = new ChoiceBox<>();
+	    gameVariantChoiceBox_inCustomScene.getItems().addAll(GameVariant.TIEN_LEN_MIEN_NAM, GameVariant.TIEN_LEN_MIEN_BAC);
+	    gameVariantChoiceBox_inCustomScene.setValue(this.selectedGameVariant);
+	    styleChoiceBox(gameVariantChoiceBox_inCustomScene); // Dùng hàm style đã có
+	    gameVariantChoiceBox_inCustomScene.setOnAction(e -> {
+	        this.selectedGameVariant = gameVariantChoiceBox_inCustomScene.getValue();
+	        // Có thể cần cập nhật lại một số thứ khác trên UI nếu luật game ảnh hưởng đến các lựa chọn khác
+	        // Ví dụ: updateDisplayedValuesOnCustomizationScene(); // Nếu có thông tin nào phụ thuộc loại game
+	    });
+
+	    settingsGrid.add(gameVariantLabel, 0, 3); // Thêm vào hàng tiếp theo trong GridPane
+	    settingsGrid.add(gameVariantChoiceBox_inCustomScene, 1, 3, 2, 1); // Cho ChoiceBox chiếm 2 cột nếu cần
 
 	    HBox bottomButtonBar = new HBox(20);
 	    bottomButtonBar.setAlignment(Pos.CENTER);
@@ -931,67 +966,96 @@ public class SceneManager {
 	}
 
 	private void startGame() {
-		stopCurrentGame();
+	    stopCurrentGame(); // Dừng game hiện tại (nếu có) để dọn dẹp
 
-		TienLenMienNamRule tienLenRule = new TienLenMienNamRule();
-		List<TienLenPlayer> players = new ArrayList<>();
+	    // In ra các lựa chọn hiện tại để debug
+	    System.out.println("Bắt đầu startGame():");
+	    System.out.println("  - Loại game đã chọn: " + selectedGameVariant);
+	    System.out.println("  - Số người chơi thật: " + numberOfHumanPlayers);
+	    System.out.println("  - Chiến lược AI: " + aiStrategy);
 
-		// Add human players
-		for (int i = 0; i < this.numberOfHumanPlayers; i++) {
-			players.add(new TienLenPlayer("Người " + (i + 1), false)); // Đổi tên để phân biệt rõ hơn
-		}
+	    // 1. Tính toán lại số lượng AI Players một cách chắc chắn dựa trên numberOfHumanPlayers
+	    // Mặc dù việc này có thể đã được thực hiện ở những nơi khác, việc tính lại ở đây đảm bảo
+	    // giá trị được sử dụng để tạo game là mới nhất.
+	    this.numberOfAIPlayers = FIXED_TOTAL_PLAYERS - this.numberOfHumanPlayers;
+	    if (this.numberOfAIPlayers < 0) {
+	        this.numberOfAIPlayers = 0; // Đảm bảo không có số AI âm
+	    }
+	    System.out.println("  - Số người chơi AI (đã tính toán): " + this.numberOfAIPlayers);
 
-		// Add AI Players (sử dụng this.numberOfAIPlayers đã được tính)
-		for (int i = 0; i < this.numberOfAIPlayers; i++) {
-			TienLenAIStrategy strategyImplementation;
-			switch (this.aiStrategy) {
-			case RANDOM:
-				strategyImplementation = new RandomStrategy();
-				break;
-			case GREEDY:
-				strategyImplementation = new GreedyStrategy();
-				break;
-			case SMART:
-			default:
-				strategyImplementation = new SmartStrategy();
-				break;
-			}
-			// Đặt tên AI dựa trên tổng số người đã có
-			players.add(
-					new TienLenAI("AI " + (this.numberOfHumanPlayers + i + 1), strategyImplementation, tienLenRule));
-		}
+	    // 2. Tạo danh sách người chơi (players)
+	    List<TienLenPlayer> players = new ArrayList<>();
 
-		// Không cần vòng lặp while để thêm/bớt player nữa vì số lượng đã cố định và
-		// tính toán chính xác
-		// if (players.size() != FIXED_TOTAL_PLAYERS) {
-		// System.err.println("Lỗi logic: Số lượng người chơi cuối cùng (" +
-		// players.size() + ") không bằng " + FIXED_TOTAL_PLAYERS);
-		// // Có thể thêm xử lý ở đây nếu muốn, ví dụ quay lại menu hoặc báo lỗi
-		// return;
-		// }
+	    // Thêm người chơi Human
+	    for (int i = 0; i < this.numberOfHumanPlayers; i++) {
+	        players.add(new TienLenPlayer("Người " + (i + 1), false));
+	    }
 
-		currentGame = new TienLenMienNamGame(players, tienLenRule);
+	    // 3. Tạo RuleSet phù hợp cho ván game này (chỉ một lần)
+	    TienLenVariantRuleSet ruleSetForThisGame;
+	    if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_BAC) {
+	        ruleSetForThisGame = new TienLenMienBacRule();
+	    } else { // Mặc định hoặc TIEN_LEN_MIEN_NAM
+	        ruleSetForThisGame = new TienLenMienNamRule();
+	    }
+	    System.out.println("  - RuleSet được sử dụng: " + ruleSetForThisGame.getClass().getSimpleName());
 
-		// Quan trọng: Nếu GraphicUIJavaFX của bạn đang dùng FXML và Controller,
-		// việc tạo mới gameGUI mỗi lần startGame có thể cần xem xét lại.
-		// Nếu GraphicUIJavaFX là UI cố định, bạn chỉ cần truyền game mới vào controller
-		// của nó.
-		// Tuy nhiên, với code hiện tại của GraphicUIJavaFX (phiên bản programmatic),
-		// việc tạo mới gameGUI có thể là cách bạn đang làm.
-		gameGUI = new GraphicUIJavaFX(currentGame, primaryStage, this); // Giả sử GraphicUIJavaFX vẫn là phiên bản
-																	// programmatic
+	    // Thêm người chơi AI, truyền RuleSet đã tạo ở trên cho chúng
+	    for (int i = 0; i < this.numberOfAIPlayers; i++) {
+	        TienLenAIStrategy strategyImplementation;
+	        switch (this.aiStrategy) {
+	            case RANDOM:
+	                strategyImplementation = new RandomStrategy();
+	                break;
+	            case GREEDY:
+	                strategyImplementation = new GreedyStrategy();
+	                break;
+	            case SMART:
+	            default: // Mặc định là SMART
+	                strategyImplementation = new SmartStrategy();
+	                break;
+	        }
+	        // Quan trọng: Truyền đúng ruleSetForThisGame vào constructor của TienLenAI
+	        players.add(
+	            new TienLenAI("AI " + (this.numberOfHumanPlayers + i + 1), strategyImplementation, ruleSetForThisGame)
+	        );
+	    }
+	    System.out.println("  - Tổng số người chơi thực tế trong danh sách: " + players.size());
 
-		// primaryStage.setTitle("Tiến Lên Miền Nam - Đang chơi"); // Có thể đổi title
-		// primaryStage.setMaximized(true); // Đã được set khi Scene thay đổi
-		// primaryStage.show(); // Không cần nếu stage đã show và chỉ đổi scene
+	    // 4. Khởi tạo đối tượng game (currentGame) với danh sách người chơi và RuleSet đã tạo
+	    if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_BAC) {
+	        // Ép kiểu ruleSetForThisGame về TienLenMienBacRule nếu constructor của TienLenMienBacGame yêu cầu
+	        currentGame = new TienLenMienBacGame(players, (TienLenMienBacRule) ruleSetForThisGame);
+	    } else {
+	        // Ép kiểu ruleSetForThisGame về TienLenMienNamRule nếu constructor của TienLenMienNamGame yêu cầu
+	        currentGame = new TienLenMienNamGame(players, (TienLenMienNamRule) ruleSetForThisGame);
+	    }
+	    System.out.println("  - Đã tạo currentGame: " + currentGame.getName());
 
-		// Khởi động game
-		currentGame.dealCards();
-		if (gameGUI != null) { // Luôn kiểm tra null
-			gameGUI.updateGameState(); // Cập nhật UI trước khi game loop chạy
-		}
-		currentGame.setGeneralGameState(Game.GeneralGameState.RUNNING);
-		currentGame.startGameLoop();
+
+	    // 5. Khởi tạo giao diện chơi game (GraphicUIJavaFX)
+	    // GraphicUIJavaFX được thiết kế để dùng chung, nó nhận vào AbstractTienLenGame<?>
+	    // và SceneManager instance.
+	    gameGUI = new GraphicUIJavaFX(currentGame, primaryStage, this);
+
+	    // 6. Thiết lập tiêu đề cửa sổ và các hành động chuẩn bị cho game
+	    primaryStage.setTitle(currentGame.getName() + " - Đang Chơi");
+	    // Listener sceneProperty trong constructor của SceneManager sẽ tự động gọi forceMaximize()
+
+	    // Đăng ký GraphicUIJavaFX làm listener cho các sự kiện game
+	    // Dòng game.addGameEventListener(gameGUI) đã có trong constructor của CardGameGUIJavaFX,
+	    // và GraphicUIJavaFX kế thừa từ CardGameGUIJavaFX, nên không cần gọi lại ở đây.
+	    // Bạn có thể kiểm tra lại constructor của CardGameGUIJavaFX để chắc chắn.
+
+	    // 7. Bắt đầu các bước của ván bài
+	    currentGame.dealCards(); // Chia bài
+	    if (gameGUI != null) {
+	       gameGUI.updateGameState(); // Cập nhật UI lần đầu sau khi chia bài để hiển thị tay bài, v.v.
+	    }
+	    currentGame.setGeneralGameState(Game.GeneralGameState.RUNNING); // Đặt trạng thái game là đang chạy
+	    currentGame.startGameLoop(); // Bắt đầu vòng lặp chính của game (trong một thread riêng)
+	    
+	    System.out.println("startGame() hoàn tất, game loop đã bắt đầu.");
 	}
 
 	public void stopCurrentGame() {
