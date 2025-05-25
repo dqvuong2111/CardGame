@@ -1,10 +1,10 @@
 package core.games.tienlen.components;
 
 import core.Card;
-import core.Player;
 import core.games.tienlen.TienLenGameContext;
 import core.games.tienlen.TienLenVariantRuleSet; // <<--- SỬ DỤNG INTERFACE NÀY
 // import core.games.tienlen.TienLenMienNamRule; // Không cần import trực tiếp TienLenMienNamRule nữa trừ khi có lý do đặc biệt
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public class PlayValidator {
         this.ruleSet = gameContext.getRuleSet(); // <<--- GÁN TRỰC TIẾP, KHÔNG CẦN ÉP KIỂU
     }
 
-    public boolean isValidPlayForCurrentContext(List<Card> cardsToPlay, Player currentPlayer) {
+    public boolean isValidPlayForCurrentContext(List<Card> cardsToPlay, TienLenPlayer currentPlayer) {
         if (cardsToPlay == null || cardsToPlay.isEmpty()) {
             return false;
         }
@@ -54,7 +54,7 @@ public class PlayValidator {
         return true;
     }
 
-    public boolean canPlayerPass(Player currentPlayer) {
+    public boolean canPlayerPass(TienLenPlayer currentPlayer) {
         // Sử dụng this.ruleSet
         if (gameContext.getLastPlayedCards().isEmpty()) {
             // Kiểm tra 3 Bích cho lượt đầu game

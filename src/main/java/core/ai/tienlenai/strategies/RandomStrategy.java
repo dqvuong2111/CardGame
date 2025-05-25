@@ -1,21 +1,21 @@
 // File: core/AIStrategy/RandomStrategy.java
-package core.ai.strategies;
+package core.ai.tienlenai.strategies;
 
 import core.Card;
-import core.RuleSet;
-import core.ai.AIStrategy;
+import core.ai.tienlenai.TienLenAIStrategy;
 import core.ai.utils.PlayableMoveGenerator; // Sử dụng lớp tiện ích
+import core.games.tienlen.TienLenVariantRuleSet;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class RandomStrategy implements AIStrategy {
+public class RandomStrategy implements TienLenAIStrategy {
     private Random random = new Random();
     private static final Card THREE_SPADES = new Card(Card.Suit.SPADES, Card.Rank.THREE); // Cụ thể cho Tiến Lên
 
     @Override
-    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
+    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
         if (currentHand.isEmpty()) {
             return new ArrayList<>();
         }

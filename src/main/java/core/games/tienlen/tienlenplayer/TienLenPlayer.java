@@ -1,18 +1,20 @@
-package core;
+package core.games.tienlen.tienlenplayer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator; // Import Comparator
 import java.util.List;
 
-public class Player {
+import core.Card;
+
+public class TienLenPlayer {
     protected String name;
     protected List<Card> hand;
     protected boolean isAI;
     protected boolean hasNoCards; // Thêm trạng thái này
     protected int winnerRank; // 1 là nhất, 2 là nhì, ...
 
-    public Player(String name, boolean isAI) {
+    public TienLenPlayer(String name, boolean isAI) {
         this.name = name;
         this.isAI = isAI;
         this.hand = new ArrayList<>();

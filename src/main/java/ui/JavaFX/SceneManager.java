@@ -1,14 +1,14 @@
 package ui.JavaFX;
 
 import core.Game;
-import core.Player;
-import core.ai.AIPlayer;
-import core.ai.AIStrategy;
-import core.ai.strategies.GreedyStrategy;
-import core.ai.strategies.RandomStrategy;
-import core.ai.strategies.SmartStrategy;
+import core.ai.tienlenai.TienLenAI;
+import core.ai.tienlenai.TienLenAIStrategy;
+import core.ai.tienlenai.strategies.GreedyStrategy;
+import core.ai.tienlenai.strategies.RandomStrategy;
+import core.ai.tienlenai.strategies.SmartStrategy;
 import core.games.tienlen.tienlenmiennam.TienLenMienNamGame;
 import core.games.tienlen.tienlenmiennam.TienLenMienNamRule;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -34,7 +34,7 @@ public class SceneManager {
     private int totalPlayers = 2;
     private int humanPlayers = 1;
     private int aiPlayers = 3;
-    private AIPlayer.StrategyType aiStrategy = AIPlayer.StrategyType.SMART;
+    private TienLenAI.StrategyType aiStrategy = TienLenAI.StrategyType.SMART;
 
     private Label totalPlayersLabel;
     private Slider totalPlayersSlider;
@@ -42,7 +42,7 @@ public class SceneManager {
     private Slider humanPlayersSlider;
     private Label aiPlayersLabel;
     private Slider aiPlayersSlider;
-    private ChoiceBox<AIPlayer.StrategyType> aiStrategyChoiceBox;
+    private ChoiceBox<TienLenAI.StrategyType> aiStrategyChoiceBox;
     
     public SceneManager(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -116,7 +116,7 @@ public class SceneManager {
         aiStrategyLabel.setTextFill(javafx.scene.paint.Color.web("#2c3e50"));
 
         aiStrategyChoiceBox = new ChoiceBox<>();
-        aiStrategyChoiceBox.getItems().addAll(AIPlayer.StrategyType.SMART, AIPlayer.StrategyType.GREEDY, AIPlayer.StrategyType.RANDOM);
+        aiStrategyChoiceBox.getItems().addAll(TienLenAI.StrategyType.SMART, TienLenAI.StrategyType.GREEDY, TienLenAI.StrategyType.RANDOM);
         aiStrategyChoiceBox.setValue(aiStrategy);
         aiStrategyChoiceBox.setOnAction(e -> aiStrategy = aiStrategyChoiceBox.getValue());
 
@@ -193,16 +193,16 @@ public class SceneManager {
         stopCurrentGame();
 
         TienLenMienNamRule tienLenRule = new TienLenMienNamRule();
-        List<Player> players = new ArrayList<>();
+        List<TienLenPlayer> players = new ArrayList<>();
 
         // Add human players
         for (int i = 0; i < humanPlayers; i++) {
-            players.add(new Player("Người chơi " + (i + 1), false));
+            players.add(new TienLenPlayer("Người chơi " + (i + 1), false));
         }
 
         // Add AI Players
         for (int i = 0; i < aiPlayers; i++) {
-            AIStrategy strategyImplementation; // Khai báo biến để giữ instance của strategy
+            TienLenAIStrategy strategyImplementation; // Khai báo biến để giữ instance của strategy
 
             // Sử dụng giá trị enum this.aiStrategy để quyết định tạo instance nào
             switch (this.aiStrategy) { // this.aiStrategy là enum AIPlayer.AIStrategy (hoặc StrategyType)
@@ -218,14 +218,14 @@ public class SceneManager {
                     break;
             }
             // Bây giờ truyền strategyImplementation (là một object) vào constructor AIPlayer
-            players.add(new AIPlayer("AI " + (humanPlayers + i + 1), strategyImplementation, tienLenRule));
+            players.add(new TienLenAI("AI " + (humanPlayers + i + 1), strategyImplementation, tienLenRule));
         }
 
         // If for some reason (e.g. initial setup logic or direct modification)
         // the sum of human and AI players doesn't match totalPlayers, adjust
         // This is a safety net; ideally, updateSliderRanges handles consistency.
         while (players.size() < totalPlayers) {
-            players.add(new AIPlayer("AI " + (players.size() + 1), new SmartStrategy(), tienLenRule));
+            players.add(new TienLenAI("AI " + (players.size() + 1), new SmartStrategy(), tienLenRule));
         }
         // Remove excess players if any (shouldn't happen with correct slider logic)
         while (players.size() > totalPlayers) {

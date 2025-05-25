@@ -3,15 +3,16 @@ package core.games.tienlen.tienlenmiennam; // Package đúng
 
 import core.Card;
 import core.Deck;
-import core.Player;
 import core.games.tienlen.AbstractTienLenGame;
 // Import TienLenMienNamRule từ package của nó
 import core.games.tienlen.tienlenmiennam.TienLenMienNamRule;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
+
 import java.util.List;
 
 public class TienLenMienNamGame extends AbstractTienLenGame<TienLenMienNamRule> {
 
-    public TienLenMienNamGame(List<Player> players, TienLenMienNamRule ruleSet) {
+    public TienLenMienNamGame(List<TienLenPlayer> players, TienLenMienNamRule ruleSet) {
         super("Tiến Lên Miền Nam", players, new Deck(), ruleSet, 1L); // aiDelay là 1 giây
     }
 
@@ -20,7 +21,7 @@ public class TienLenMienNamGame extends AbstractTienLenGame<TienLenMienNamRule> 
         // Logic tìm người có 3 Bích đặc thù của Miền Nam
         // RoundManager có thể đã có logic này, hoặc bạn implement ở đây và gọi qua context
         // Giữ lại logic từ TienLenGame cũ:
-        List<Player> currentPlayers = getPlayers(); // Lấy từ context (super)
+        List<TienLenPlayer> currentPlayers = getPlayers(); // Lấy từ context (super)
         Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE);
         int starterIdx = -1;
         for (int i = 0; i < currentPlayers.size(); i++) {

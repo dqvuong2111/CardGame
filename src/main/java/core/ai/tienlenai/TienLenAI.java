@@ -1,13 +1,13 @@
-package core.ai;
+package core.ai.tienlenai;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import core.Card;
-import core.Player;
-import core.RuleSet;
+import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
-public class AIPlayer extends Player {
+public class TienLenAI extends TienLenPlayer {
 
     // Enum này có thể vẫn hữu ích cho SceneManager để chọn loại strategy
     public enum StrategyType { // Đổi tên từ AIStrategy để tránh trùng với interface
@@ -16,16 +16,16 @@ public class AIPlayer extends Player {
         SMART
     }
 
-    private AIStrategy currentStrategyImplementation; // Tham chiếu đến đối tượng strategy cụ thể
-    private RuleSet ruleSet; // RuleSet vẫn cần thiết cho các strategy
+    private TienLenAIStrategy currentStrategyImplementation; // Tham chiếu đến đối tượng strategy cụ thể
+    private TienLenVariantRuleSet ruleSet; // RuleSet vẫn cần thiết cho các strategy
 
-    public AIPlayer(String name, AIStrategy strategyImplementation, RuleSet ruleSet) {
+    public TienLenAI(String name, TienLenAIStrategy strategyImplementation, TienLenVariantRuleSet ruleSet) {
         super(name, true);
         this.currentStrategyImplementation = strategyImplementation;
         this.ruleSet = ruleSet;
     }
 
-    public void setStrategy(AIStrategy strategyImplementation) {
+    public void setStrategy(TienLenAIStrategy strategyImplementation) {
         this.currentStrategyImplementation = strategyImplementation;
     }
     

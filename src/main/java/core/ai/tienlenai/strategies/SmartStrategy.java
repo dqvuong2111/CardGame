@@ -1,21 +1,21 @@
 // File: core/AIStrategy/SmartStrategy.java
-package core.ai.strategies;
+package core.ai.tienlenai.strategies;
 
 import core.Card;
-import core.RuleSet;
-import core.ai.AIStrategy;
+import core.ai.tienlenai.TienLenAIStrategy;
 import core.ai.utils.CombinationFinder; // Vẫn có thể dùng để phân tích tay bài nếu cần cho các heuristic phụ
 import core.ai.utils.PlayableMoveGenerator;
+import core.games.tienlen.TienLenVariantRuleSet;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class SmartStrategy implements AIStrategy {
+public class SmartStrategy implements TienLenAIStrategy {
     private static final Card THREE_SPADES = new Card(Card.Suit.SPADES, Card.Rank.THREE);
 
     @Override
-    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
+    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
         if (currentHand.isEmpty()) {
             return new ArrayList<>();
         }
@@ -83,7 +83,7 @@ public class SmartStrategy implements AIStrategy {
 
     // Helper để tìm các tổ hợp chứa một lá bài cụ thể (ví dụ 3 Bích)
     // Dùng cho lượt đầu tiên của game
-    private List<List<Card>> findPlaysContainingCard(List<Card> hand, Card specificCard, RuleSet ruleSet, List<Card> lastPlayedCards) {
+    private List<List<Card>> findPlaysContainingCard(List<Card> hand, Card specificCard, TienLenVariantRuleSet ruleSet, List<Card> lastPlayedCards) {
         List<List<Card>> foundPlays = new ArrayList<>();
         // Thử đánh lẻ
         List<Card> singlePlay = List.of(specificCard);
@@ -107,14 +107,14 @@ public class SmartStrategy implements AIStrategy {
     }
     
     // Helper kiểm tra tính hợp lệ của một nước đi
-    private boolean isValidPlay(List<Card> play, List<Card> lastPlayedCards, RuleSet ruleSet) {
+    private boolean isValidPlay(List<Card> play, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet) {
         if (!ruleSet.isValidCombination(play)) return false;
         if (lastPlayedCards == null || lastPlayedCards.isEmpty()) return true; // Hợp lệ nếu mở đầu vòng
         return ruleSet.canPlayAfter(play, lastPlayedCards);
     }
 
     // Helper tìm các nước đi "chặt" đặc biệt
-    private List<Card> findSpecialChumpingPlay(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet) {
+    private List<Card> findSpecialChumpingPlay(List<Card> currentHand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet) {
         if (lastPlayedCards == null || lastPlayedCards.isEmpty()) {
             return new ArrayList<>();
         }

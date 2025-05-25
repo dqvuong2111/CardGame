@@ -1,9 +1,9 @@
-package core.ai;
+package core.ai.tienlenai;
 
 import java.util.List;
 import core.Card;
-import core.RuleSet;
-public interface AIStrategy {
+import core.games.tienlen.TienLenVariantRuleSet;
+public interface TienLenAIStrategy {
     /**
      * Chọn các lá bài để đánh dựa trên chiến lược cụ thể.
      *
@@ -13,5 +13,5 @@ public interface AIStrategy {
      * @param isFirstTurn     Cho biết đây có phải là lượt đầu tiên của ván game không.
      * @return Danh sách các lá bài AI chọn để đánh (trả về danh sách rỗng nếu bỏ lượt).
      */
-    List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurn);
+    List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet, boolean isFirstTurn);
 }

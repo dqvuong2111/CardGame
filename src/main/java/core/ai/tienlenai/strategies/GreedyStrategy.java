@@ -1,21 +1,21 @@
 // File: core/AIStrategy/GreedyStrategy.java
-package core.ai.strategies;
+package core.ai.tienlenai.strategies;
 
 import core.Card;
-import core.RuleSet;
-import core.ai.AIStrategy;
+import core.ai.tienlenai.TienLenAIStrategy;
 import core.ai.utils.CombinationFinder; // Có thể cần để tìm tổ hợp chứa 3 bích
 import core.ai.utils.PlayableMoveGenerator;
+import core.games.tienlen.TienLenVariantRuleSet;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class GreedyStrategy implements AIStrategy {
+public class GreedyStrategy implements TienLenAIStrategy {
     private static final Card THREE_SPADES = new Card(Card.Suit.SPADES, Card.Rank.THREE); // Cụ thể cho Tiến Lên
 
     @Override
-    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
+    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
         if (currentHand.isEmpty()) {
             return new ArrayList<>();
         }
@@ -98,7 +98,7 @@ public class GreedyStrategy implements AIStrategy {
     }
 
     // Helper để tìm các tổ hợp chứa một lá bài cụ thể (ví dụ 3 Bích)
-    private List<List<Card>> findPlaysContainingCard(List<Card> hand, Card specificCard, RuleSet ruleSet, List<Card> lastPlayedCards) {
+    private List<List<Card>> findPlaysContainingCard(List<Card> hand, Card specificCard, TienLenVariantRuleSet ruleSet, List<Card> lastPlayedCards) {
         List<List<Card>> FinnedPlays = new ArrayList<>();
         // 1. Đánh lẻ lá specificCard
         List<Card> singlePlay = List.of(specificCard);

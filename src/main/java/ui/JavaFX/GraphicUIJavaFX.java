@@ -3,6 +3,7 @@ package ui.JavaFX;
 import core.*;
 import core.games.tienlen.*;
 import core.games.tienlen.tienlenmiennam.TienLenMienNamGame;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -46,7 +47,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
     private List<Card> selectedCards = new ArrayList<>();
     private volatile boolean waitingForInput = false;
 
-    private Map<Player, VBox> playerPanels;
+    private Map<TienLenPlayer, VBox> playerPanels;
 
     public GraphicUIJavaFX(TienLenMienNamGame game, Stage primaryStage) {
         super(game, primaryStage); // Now the super constructor does less
@@ -87,7 +88,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         allPlayersInfoBox.setMaxWidth(250);
         System.out.println("allPlayersInfoBox created.");
         
-        List<Player> players = game.getPlayers();
+        List<TienLenPlayer> players = game.getPlayers();
         System.out.println("Number of players found: " + players.size());
         
         players.sort((p1, p2) -> {
@@ -96,7 +97,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
             return p1.getName().compareTo(p2.getName());
         });
 
-        for (Player p : players) {
+        for (TienLenPlayer p : players) {
             VBox playerPanel = new VBox(5);
             playerPanel.setPadding(new Insets(10));
             playerPanel.setAlignment(Pos.CENTER);
@@ -190,7 +191,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
     }
 
     @Override
-    public void displayPlayerHand(Player player) {
+    public void displayPlayerHand(TienLenPlayer player) {
         if (!player.isAI() && game.getCurrentPlayer() == player) {
             playerHandBox.getChildren().clear();
             List<Card> hand = new ArrayList<>(player.getHand());
@@ -244,7 +245,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
             }
 
             // Cập nhật playerPanels (giữ nguyên logic của bạn)
-            for (Player p : game.getPlayers()) {
+            for (TienLenPlayer p : game.getPlayers()) {
                 VBox playerPanel = playerPanels.get(p);
                 if (playerPanel != null && playerPanel.getChildren().size() >= 2) { // Thêm kiểm tra an toàn
                     Label cardsCountLabel = (Label) playerPanel.getChildren().get(1);
@@ -271,7 +272,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
 
             // Xử lý trạng thái nút và hiển thị tay bài
             boolean isGameOver = (game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER);
-            Player currentPlayer = game.getCurrentPlayer(); // Có thể null nếu game vừa kết thúc và chưa có ván mới
+            TienLenPlayer currentPlayer = game.getCurrentPlayer(); // Có thể null nếu game vừa kết thúc và chưa có ván mới
 
             if (isGameOver) {
                 // GAME ĐÃ KẾT THÚC
@@ -319,7 +320,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
     private void handlePlayButton() {
         if (waitingForInput) {
             TienLenMienNamGame tienLenGame = (TienLenMienNamGame) game;
-            Player currentPlayer = game.getCurrentPlayer();
+            TienLenPlayer currentPlayer = game.getCurrentPlayer();
             if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.isValidPlay(selectedCards)) {
                 tienLenGame.setPlayerInput(new ArrayList<>(selectedCards));
                 selectedCards.clear();
@@ -333,7 +334,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
     private void handlePassButton() {
         if (waitingForInput) {
             TienLenMienNamGame tienLenGame = (TienLenMienNamGame) game;
-            Player currentPlayer = game.getCurrentPlayer();
+            TienLenPlayer currentPlayer = game.getCurrentPlayer();
             if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.canPass(currentPlayer)) {
                 tienLenGame.setPlayerInput(new ArrayList<>());
                 selectedCards.clear();
@@ -368,14 +369,14 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
     }
 
     @Override
-    public void onGameOver(List<Player> winners) {
+    public void onGameOver(List<TienLenPlayer> winners) {
         StringBuilder sb = new StringBuilder("GAME KẾT THÚC!\n");
         if (winners.isEmpty()) {
             sb.append("Không ai thắng (có thể do lỗi).\n");
         } else {
             sb.append("Thứ hạng:\n");
             for (int i = 0; i < winners.size(); i++) {
-                Player p = winners.get(i);
+                TienLenPlayer p = winners.get(i);
                 sb.append(p.getWinnerRank()).append(". ").append(p.getName());
                 if (p.getWinnerRank() > 0) {
                     sb.append(" (Hạng: ").append(p.getWinnerRank()).append(")");
@@ -405,7 +406,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
     }
 
     @Override
-    public List<Card> getPlayerCardSelection(Player player) {
+    public List<Card> getPlayerCardSelection(TienLenPlayer player) {
         return null;
     }
 

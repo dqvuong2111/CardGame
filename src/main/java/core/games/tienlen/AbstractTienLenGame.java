@@ -5,6 +5,7 @@ import core.*;
 import core.games.tienlen.components.PlayValidator;
 import core.games.tienlen.components.RoundManager;
 import core.games.tienlen.components.TurnProcessor;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,7 +24,7 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
     protected final PlayValidator playValidator;
     protected final RoundManager roundManager;
 
-    public AbstractTienLenGame(String gameName, List<Player> players, Deck deck, R ruleSet, long aiDelay) {
+    public AbstractTienLenGame(String gameName, List<TienLenPlayer> players, Deck deck, R ruleSet, long aiDelay) {
         super(gameName, players, deck, ruleSet);
         this.tienLenState = new TienLenState(); // Khởi tạo đối tượng trạng thái
         this.aiDelaySecondsInternal = aiDelay;
@@ -37,23 +38,23 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
     // --- Implement TienLenGameContext bằng cách ủy nhiệm cho tienLenState ---
     @Override public List<Card> getLastPlayedCards() { return tienLenState.getLastPlayedCards(); }
     @Override public void setLastPlayedCards(List<Card> cards) { tienLenState.setLastPlayedCards(cards); }
-    @Override public Player getLastPlayer() { return tienLenState.getLastPlayer(); }
-    @Override public void setLastPlayer(Player player) { tienLenState.setLastPlayer(player); }
+    @Override public TienLenPlayer getLastPlayer() { return tienLenState.getLastPlayer(); }
+    @Override public void setLastPlayer(TienLenPlayer player) { tienLenState.setLastPlayer(player); }
     @Override public int getPassCount() { return tienLenState.getPassCount(); }
     @Override public void incrementPassCount() { tienLenState.incrementPassCount(); }
     @Override public void resetPassCount() { tienLenState.resetPassCount(); }
     @Override public boolean isFirstTurnOfGame() { return tienLenState.isFirstTurnOfGame(); }
     @Override public void setFirstTurnOfGame(boolean isFirst) { tienLenState.setFirstTurnOfGame(isFirst); }
-    @Override public Player getPlayerWhoPlayedLastValidCards() { return tienLenState.getPlayerWhoPlayedLastValidCards(); }
-    @Override public void setPlayerWhoPlayedLastValidCards(Player player) { tienLenState.setPlayerWhoPlayedLastValidCards(player); }
-    @Override public List<Player> getPlayers() { return super.players; }
-    @Override public Player getCurrentPlayer() { return super.getCurrentPlayer(); }
+    @Override public TienLenPlayer getPlayerWhoPlayedLastValidCards() { return tienLenState.getPlayerWhoPlayedLastValidCards(); }
+    @Override public void setPlayerWhoPlayedLastValidCards(TienLenPlayer player) { tienLenState.setPlayerWhoPlayedLastValidCards(player); }
+    @Override public List<TienLenPlayer> getPlayers() { return super.players; }
+    @Override public TienLenPlayer getCurrentPlayer() { return super.getCurrentPlayer(); }
     @Override public int getCurrentPlayerIndex() { return super.currentPlayerIndex; }
     @Override public void setCurrentPlayerByIndex(int index) { super.currentPlayerIndex = index; }
     @Override public R getRuleSet() { return super.ruleSet; }
-    @Override public List<Player> getWinners() { return tienLenState.getWinners(); }
+    @Override public List<TienLenPlayer> getWinners() { return tienLenState.getWinners(); }
     @Override public int getCurrentWinnerRank() { return tienLenState.getCurrentWinnerRank(); }
-    @Override public void addWinner(Player winner, int rank) { tienLenState.addWinner(winner, rank); }
+    @Override public void addWinner(TienLenPlayer winner, int rank) { tienLenState.addWinner(winner, rank); }
     @Override public TienLenGameState getCurrentTienLenState() { return tienLenState.getCurrentTienLenGameState(); }
     @Override public void setCurrentTienLenState(TienLenGameState newState) {
         tienLenState.setCurrentTienLenGameState(newState);
@@ -62,11 +63,11 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
 
     // Các hàm notify vẫn được gọi từ AbstractTienLenGame (lớp cha Game)
     @Override public void notifyMessage(String message) { super.notifyMessageReceived(message); }
-    @Override public void notifyPlayerTurnStarted(Player player) { super.notifyPlayerTurnStarted(player); }
-    @Override public void notifyCardsPlayed(Player p, List<Card> cards, List<Card> lastPlayed) { super.notifyCardsPlayed(p, cards, lastPlayed); }
-    @Override public void notifyPlayerPassed(Player p) { super.notifyPlayerPassed(p); }
-    @Override public void notifyRoundStarted(Player p) { super.notifyRoundStarted(p); }
-    @Override public void notifyPlayerEliminated(Player p) { super.notifyPlayerEliminated(p); }
+    @Override public void notifyPlayerTurnStarted(TienLenPlayer player) { super.notifyPlayerTurnStarted(player); }
+    @Override public void notifyCardsPlayed(TienLenPlayer p, List<Card> cards, List<Card> lastPlayed) { super.notifyCardsPlayed(p, cards, lastPlayed); }
+    @Override public void notifyPlayerPassed(TienLenPlayer p) { super.notifyPlayerPassed(p); }
+    @Override public void notifyRoundStarted(TienLenPlayer p) { super.notifyRoundStarted(p); }
+    @Override public void notifyPlayerEliminated(TienLenPlayer p) { super.notifyPlayerEliminated(p); }
 
     // Giữ lại logic input
     @Override public List<Card> getHumanInputSynchronously() { /* ... như cũ ... */
@@ -85,7 +86,7 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
     @Override
     public void dealCards() {
         deck.reset(); deck.shuffle();
-        for (Player player : players) {
+        for (TienLenPlayer player : players) {
             player.getHand().clear(); player.setHasNoCards(false); player.setWinnerRank(0);
         }
         tienLenState.clearWinnersAndRank(); // Reset winners và rank trong tienLenState
@@ -97,11 +98,11 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
 
         int cardsPerPlayer = 13;
         for (int i = 0; i < cardsPerPlayer; i++) {
-            for (Player player : players) {
+            for (TienLenPlayer player : players) {
                 Card card = deck.drawCard(); if (card != null) player.addCard(card);
             }
         }
-        for (Player player : players) { player.sortHand(ruleSet.getCardComparator()); }
+        for (TienLenPlayer player : players) { player.sortHand(ruleSet.getCardComparator()); }
 
         findStartingPlayerOfGameVariant(); // Gọi phương thức trừu tượng (lớp con cài đặt)
         
@@ -116,7 +117,7 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
         super.setGeneralGameState(Game.GeneralGameState.INITIALIZING);
         this.tienLenState.resetForNewGame(); // Gọi hàm reset của tienLenState
         // Reset các trạng thái của Player mà tienLenState không quản lý trực tiếp
-        for (Player p : players) {
+        for (TienLenPlayer p : players) {
              p.getHand().clear(); p.setHasNoCards(false); p.clearWinnerRank();
         }
         deck.reset(); // Reset bộ bài
@@ -142,7 +143,7 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
     @Override
     public void runGameLoop() {
         while (getGeneralGameState() == GeneralGameState.RUNNING && !isFinished) {
-            Player currentPlayer = getCurrentPlayer();
+            TienLenPlayer currentPlayer = getCurrentPlayer();
             if (currentPlayer.hasNoCards()) {
                 moveToNextActivePlayer();
                 if (checkGameOver()) { setGeneralGameState(GeneralGameState.GAME_OVER); break; }
@@ -215,12 +216,12 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
 
     protected void finalizeGameExecution() {
         if (this.isFinished || getGeneralGameState() == GeneralGameState.GAME_OVER) {
-            List<Player> finalWinnersList = determineWinners();
+            List<TienLenPlayer> finalWinnersList = determineWinners();
              if (finalWinnersList.size() < players.size()) { // Gán hạng cho người thua
-                for (Player p : players) { if (p.getWinnerRank() == 0 && !p.hasNoCards()) addWinner(p, getCurrentWinnerRank()); } // getCurrentWinnerRank() sẽ lấy từ tienLenState
+                for (TienLenPlayer p : players) { if (p.getWinnerRank() == 0 && !p.hasNoCards()) addWinner(p, getCurrentWinnerRank()); } // getCurrentWinnerRank() sẽ lấy từ tienLenState
                 // Sắp xếp lại winners sau khi thêm người thua
                 finalWinnersList = new ArrayList<>(tienLenState.getWinners()); // Lấy danh sách winners mới nhất
-                Collections.sort(finalWinnersList, Comparator.comparingInt(Player::getWinnerRank).thenComparing(Player::getName));
+                Collections.sort(finalWinnersList, Comparator.comparingInt(TienLenPlayer::getWinnerRank).thenComparing(TienLenPlayer::getName));
             }
             super.notifyGameOver(finalWinnersList);
             if (super.onGameEndCallback != null) javafx.application.Platform.runLater(super.onGameEndCallback);
@@ -232,19 +233,19 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
         if (this.isFinished) return true;
         long activePlayersCount = players.stream().filter(p -> !p.hasNoCards()).count();
         if (activePlayersCount <= 1) { this.isFinished = true;
-            if (activePlayersCount == 1) { Player lastOne = players.stream().filter(p -> !p.hasNoCards()).findFirst().orElse(null); if (lastOne != null && lastOne.getWinnerRank() == 0) addWinner(lastOne, getCurrentWinnerRank()); }
+            if (activePlayersCount == 1) { TienLenPlayer lastOne = players.stream().filter(p -> !p.hasNoCards()).findFirst().orElse(null); if (lastOne != null && lastOne.getWinnerRank() == 0) addWinner(lastOne, getCurrentWinnerRank()); }
             return true;
         } return false;
     }
-    @Override protected List<Player> determineWinners() {
-        List<Player> finalSortedWinners = new ArrayList<>(tienLenState.getWinners());
-        for(Player p : players){ if(!p.hasNoCards() && p.getWinnerRank() == 0 && !finalSortedWinners.contains(p)) addWinner(p, getCurrentWinnerRank()); }
+    @Override protected List<TienLenPlayer> determineWinners() {
+        List<TienLenPlayer> finalSortedWinners = new ArrayList<>(tienLenState.getWinners());
+        for(TienLenPlayer p : players){ if(!p.hasNoCards() && p.getWinnerRank() == 0 && !finalSortedWinners.contains(p)) addWinner(p, getCurrentWinnerRank()); }
         finalSortedWinners = new ArrayList<>(tienLenState.getWinners());
-        Collections.sort(finalSortedWinners, Comparator.comparingInt(Player::getWinnerRank).thenComparing(Player::getName));
+        Collections.sort(finalSortedWinners, Comparator.comparingInt(TienLenPlayer::getWinnerRank).thenComparing(TienLenPlayer::getName));
         return finalSortedWinners;
     }
     @Override public boolean isValidPlay(List<Card> cards) { return ruleSet.isValidCombination(cards); }
-    @Override public boolean canPass(Player player) {
+    @Override public boolean canPass(TienLenPlayer player) {
         if (getLastPlayedCards().isEmpty()) { // Sử dụng getter của context
             if (isFirstTurnOfGame() && player.getHand().contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) return false;
             if(!isFirstTurnOfGame() && !player.isAI()) return false;

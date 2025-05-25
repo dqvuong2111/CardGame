@@ -2,8 +2,8 @@ package core.games.tienlen.components;
 
 
 import core.Card;
-import core.Player;
 import core.games.tienlen.TienLenGameContext;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +18,7 @@ public class RoundManager {
         this.gameContext = gameContext;
     }
 
-    public void processPlayedCards(Player currentPlayer, List<Card> cardsToPlay) {
+    public void processPlayedCards(TienLenPlayer currentPlayer, List<Card> cardsToPlay) {
         currentPlayer.removeCards(cardsToPlay);
         gameContext.setLastPlayedCards(new ArrayList<>(cardsToPlay));
         gameContext.setLastPlayer(currentPlayer);
@@ -30,7 +30,7 @@ public class RoundManager {
         gameContext.notifyCardsPlayed(currentPlayer, cardsToPlay, gameContext.getLastPlayedCards());
     }
 
-    public void processPassedTurn(Player currentPlayer) {
+    public void processPassedTurn(TienLenPlayer currentPlayer) {
         gameContext.notifyPlayerPassed(currentPlayer);
         gameContext.incrementPassCount();
         // playerWhoPlayedLastValidCards không đổi
@@ -38,11 +38,11 @@ public class RoundManager {
 
     public boolean manageRoundEndAndNewRound() {
         long activePlayersCount = gameContext.getPlayers().stream().filter(p -> !p.hasNoCards()).count();
-        Player lastValidPlayer = gameContext.getPlayerWhoPlayedLastValidCards();
+        TienLenPlayer lastValidPlayer = gameContext.getPlayerWhoPlayedLastValidCards();
 
-        if (lastValidPlayer != null && gameContext.getPassCount() >= activePlayersCount && activePlayersCount > 0) {
+        if (lastValidPlayer != null && gameContext.getPassCount() >= (activePlayersCount - 1) && activePlayersCount > 0) {
             // Nếu tất cả người chơi còn lại (trừ người đánh hợp lệ cuối cùng) đã bỏ lượt
-            Player roundStarter = lastValidPlayer;
+            TienLenPlayer roundStarter = lastValidPlayer;
             if (roundStarter.hasNoCards()) { // Người thắng vòng đã hết bài
                 // Cần tìm người kế tiếp để bắt đầu vòng mới
                 // Logic này sẽ được xử lý bởi việc chọn next player sau đó
@@ -61,8 +61,8 @@ public class RoundManager {
         return false; // Vòng hiện tại vẫn tiếp tục hoặc không có điều kiện bắt đầu vòng mới rõ ràng
     }
     
-    private void startNewRoundForNextAvailablePlayer(Player previousRoundWinner) {
-        List<Player> players = gameContext.getPlayers();
+    private void startNewRoundForNextAvailablePlayer(TienLenPlayer previousRoundWinner) {
+        List<TienLenPlayer> players = gameContext.getPlayers();
         int winnerIndex = players.indexOf(previousRoundWinner);
         int nextPlayerIndex = (winnerIndex + 1) % players.size();
         int loopCheck = 0;
@@ -79,7 +79,7 @@ public class RoundManager {
     }
 
 
-    public void startNewRound(Player roundStarter) {
+    public void startNewRound(TienLenPlayer roundStarter) {
         if (roundStarter == null || roundStarter.hasNoCards()) return; // Không thể bắt đầu nếu người đó đã hết bài
 
         gameContext.notifyMessage("Vòng mới! " + roundStarter.getName() + " sẽ đi trước.");
@@ -93,7 +93,7 @@ public class RoundManager {
         gameContext.notifyRoundStarted(roundStarter);
     }
 
-    public void handlePlayerFinish(Player finishedPlayer) {
+    public void handlePlayerFinish(TienLenPlayer finishedPlayer) {
         if (!gameContext.getWinners().contains(finishedPlayer)) { // Tránh thêm nhiều lần
             finishedPlayer.setHasNoCards(true); // Đánh dấu người chơi đã hết bài
             gameContext.addWinner(finishedPlayer, gameContext.getCurrentWinnerRank());
@@ -102,7 +102,7 @@ public class RoundManager {
     }
 
     public void findStartingPlayerOfGame() {
-        List<Player> players = gameContext.getPlayers();
+        List<TienLenPlayer> players = gameContext.getPlayers();
         Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE);
         int starterIdx = -1;
         for (int i = 0; i < players.size(); i++) {

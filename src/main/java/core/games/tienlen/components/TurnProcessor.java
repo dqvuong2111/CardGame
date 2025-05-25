@@ -1,9 +1,10 @@
 package core.games.tienlen.components;
 
 import core.Card;
-import core.Player;
-import core.ai.AIPlayer;
+import core.ai.tienlenai.TienLenAI;
 import core.games.tienlen.TienLenGameContext; // Sử dụng TienLenGameContext
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
+
 // import core.games.tienlen.TienLenVariantRuleSet; // Có thể không cần nếu RuleSet trong context đã đủ
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +18,7 @@ public class TurnProcessor {
         this.aiDelaySeconds = aiDelaySeconds;
     }
 
-    public List<Card> getPlayerAction(Player currentPlayer) {
+    public List<Card> getPlayerAction(TienLenPlayer currentPlayer) {
         List<Card> chosenCards = null;
         if (currentPlayer.isAI()) {
             gameContext.notifyMessage(currentPlayer.getName() + " (AI) đang suy nghĩ...");
@@ -28,7 +29,7 @@ public class TurnProcessor {
                 gameContext.notifyMessage(currentPlayer.getName() + " (AI) bị gián đoạn khi suy nghĩ.");
                 return null; // Trả về null (hoặc rỗng) để coi như bỏ lượt
             }
-            AIPlayer aiPlayer = (AIPlayer) currentPlayer;
+            TienLenAI aiPlayer = (TienLenAI) currentPlayer;
 
             chosenCards = aiPlayer.chooseCards(
                 gameContext.getLastPlayedCards(),   // Bài đã đánh trên bàn
