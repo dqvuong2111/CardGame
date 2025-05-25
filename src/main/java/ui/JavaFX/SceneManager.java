@@ -176,7 +176,7 @@ public class SceneManager {
 	    titleLabel.setEffect(ds);
 	 
 	 
-	    Button newGameButton = new Button("Tùy Chỉnh Ván Chơi");
+	    Button newGameButton = new Button("Bắt đầu");
 	    styleMenuButton(newGameButton, "#FF8C00", "#FFA500");
 	    // Quan trọng: các setOnAction giờ sẽ gọi các phương thức show...Scene tương ứng
 	    newGameButton.setOnAction(e -> showPlayerCustomizationScene());
