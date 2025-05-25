@@ -82,7 +82,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         rootLayout = new BorderPane();
         rootLayout.setPadding(new Insets(20));
         
-        String imagePathForGameScreen = "/background/mm2.jpg"; // << THAY BẰNG ĐƯỜNG DẪN CỦA BẠN
+        String imagePathForGameScreen = "/background/mm3.jpg"; // << THAY BẰNG ĐƯỜNG DẪN CỦA BẠN
         try {
             // Sử dụng getClass().getResource() thay vì CardView.class.getResource()
             // nếu CardView là inner class hoặc bạn muốn đường dẫn rõ ràng từ gốc classpath
@@ -113,7 +113,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         messageBox.setAlignment(Pos.CENTER);
         messageBox.getChildren().add(messageLabel);
         messageBox.setStyle(
-                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-color: rgba(255, 255, 255, 0);" + // Nền trắng mờ 70% đục
                 "-fx-background-radius: 10;"
             );
         rootLayout.setTop(messageBox);
@@ -124,7 +124,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         allPlayersInfoBox.setPadding(new Insets(10));
         allPlayersInfoBox.setAlignment(Pos.TOP_CENTER);
         allPlayersInfoBox.setStyle(
-                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-color: rgba(255, 255, 255, 0);" + // Nền trắng mờ 70% đục
                 "-fx-background-radius: 10;"
             );
         allPlayersInfoBox.setPrefWidth(200);
@@ -162,6 +162,9 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
             nameLabel.setTextFill(javafx.scene.paint.Color.WHITE);
             
             Label cardsCountLabel = new Label("Bài: " + p.getHand().size());
+            cardsCountLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13)); // Giữ lại hoặc tùy chỉnh font nếu muốn
+            cardsCountLabel.setTextFill(Color.LIGHTGOLDENRODYELLOW);
+            
             playerPanel.getChildren().addAll(nameLabel, cardsCountLabel);
 
             playerPanels.put(p, playerPanel);
@@ -189,7 +192,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         playedCardsBox.setAlignment(Pos.CENTER);
         playedCardsBox.setPadding(new Insets(10));
         playedCardsBox.setStyle(
-                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-color: rgba(255, 255, 255, 0);" + // Nền trắng mờ 70% đục
                 "-fx-background-radius: 10;"
             );
         playedCardsContainer.getChildren().addAll(playedCardsTitle, playedCardsBox);
@@ -201,7 +204,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         humanHandDisplayContainer.setAlignment(Pos.CENTER);
         humanHandDisplayContainer.setPadding(new Insets(10));
         humanHandDisplayContainer.setStyle(
-                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-color: rgba(255, 255, 255, 0);" + // Nền trắng mờ 70% đục
                 "-fx-background-radius: 10;"
             );
         Label humanHandTitle = new Label("Bài của bạn");
@@ -220,31 +223,28 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         controlBox.setAlignment(Pos.CENTER);
         controlBox.setPadding(new Insets(20, 10, 20, 10));
         controlBox.setStyle(
-                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
+                "-fx-background-color: rgba(255, 255, 255, 0);" + // Nền trắng mờ 70% đục
                 "-fx-background-radius: 10;"
             );
         controlBox.setPrefWidth(150);
         controlBox.setMaxWidth(180);
 
-        playButton = new Button("Đánh bài");
-        playButton.setMaxWidth(Double.MAX_VALUE);
-        playButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        playButton = new Button("Đánh bài"); 
+        styleGameButtonOnGreenBackground(playButton, true); // Nút chính
+        playButton.setOnAction(event -> handlePlayButton());
         playButton.setOnAction(event -> handlePlayButton());
 
-        passButton = new Button("Bỏ lượt");
-        passButton.setMaxWidth(Double.MAX_VALUE);
-        passButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        passButton = new Button("Bỏ lượt"); 
+        styleGameButtonOnGreenBackground(passButton, false);
         passButton.setOnAction(event -> handlePassButton());
 
-        newGameButton = new Button("Ván mới");
-        newGameButton.setMaxWidth(Double.MAX_VALUE);
-        newGameButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        newGameButton = new Button("Ván mới"); 
+        styleGameButtonOnGreenBackground(newGameButton, false);
         newGameButton.setOnAction(event -> handleNewGameButton());
         newGameButton.setDisable(true);
         
-        backToMainMenuButton = new Button("Về Menu Chính");
-        backToMainMenuButton.setMaxWidth(Double.MAX_VALUE);
-        backToMainMenuButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backToMainMenuButton = new Button("Menu Chính"); 
+        styleGameButtonOnGreenBackground(backToMainMenuButton, false);
         backToMainMenuButton.setOnAction(event -> handleNewGameButton());
         backToMainMenuButton.setDisable(true);
         backToMainMenuButton.setOnAction(event -> {
@@ -318,7 +318,21 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
                     playedCardsBox.getChildren().add(playedCardView);
                 }
             } else {
-                playedCardsBox.getChildren().add(new Label("Không có bài trên bàn."));
+            	Label noCardsLabel = new Label("Không có bài trên bàn.");
+                
+                // Bạn có thể đặt màu chữ và font cho noCardsLabel ở đây
+                noCardsLabel.setTextFill(javafx.scene.paint.Color.WHITE); // Ví dụ: chữ màu trắng
+                noCardsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+
+                // Tùy chọn: Thêm bóng đổ cho chữ trắng để dễ đọc trên nền ảnh phức tạp
+                javafx.scene.effect.DropShadow ds = new javafx.scene.effect.DropShadow();
+                ds.setRadius(2);
+                ds.setOffsetX(1.0);
+                ds.setOffsetY(1.0);
+                ds.setColor(javafx.scene.paint.Color.rgb(0, 0, 0, 0.7)); // Bóng đen mờ
+                noCardsLabel.setEffect(ds);
+                
+                playedCardsBox.getChildren().add(noCardsLabel); // Thêm Label vào HBox
             }
 
             // Cập nhật playerPanels (giữ nguyên logic của bạn)
@@ -332,26 +346,44 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
 
                     // Chỉ thay đổi style nếu game chưa kết thúc, nếu kết thúc thì giữ nguyên hoặc đặt style cố định
                     if (game.getGeneralGameState() != Game.GeneralGameState.GAME_OVER && game.getCurrentPlayer() == p) {
-                        playerPanel.setStyle(
-                                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
-                                        "-fx-background-radius: 10;"
-                                    );
-                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI) - Lượt!" : " (Bạn) - Lượt!"));
-                        nameLabel.setTextFill(Color.BLUE);
+                    	playerPanel.setStyle(
+                                "-fx-border-color: #FFFACD; " + // Viền màu trắng kem (LemonChiffon)
+                                "-fx-border-width: 3.5; " +     // Có thể tăng độ dày viền một chút
+                                "-fx-border-radius: 10; " +    // Bo tròn hơn
+                                "-fx-background-radius: 10;" +
+                                "-fx-background-color: rgba(0, 100, 0, 0.7);" // Nền XANH LÁ CÂY ĐẬM MỜ (DarkGreen 70% đục)
+                                                                              // Hoặc một màu xanh lá khác biệt: rgba(60, 179, 113, 0.7) (MediumSeaGreen mờ)
+                            );
+                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI) - Lượt!" : " - Lượt!"));
+                        nameLabel.setTextFill(Color.LIGHTGOLDENRODYELLOW); 
                     } else if (game.getGeneralGameState() != Game.GeneralGameState.GAME_OVER) { // Game đang chạy nhưng không phải lượt người này
-                        playerPanel.setStyle(
-                                "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
-                                        "-fx-background-radius: 10;"
-                                    );
-                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : ""));
-                        nameLabel.setTextFill(Color.BLACK);
+                    	playerPanel.setStyle(
+                                "-fx-border-color: rgba(100, 150, 100, 0.5);" + // Viền xanh lá mờ nhạt
+                                "-fx-border-width: 1.5; " +
+                                "-fx-border-radius: 8; " +
+                                "-fx-background-radius: 8;" +
+                                "-fx-background-color: rgba(0, 50, 0, 0.5);" // Nền xanh lá cây RẤT ĐẬM MỜ cho AI
+                            );
+                    	nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : " "));
+                        nameLabel.setTextFill(Color.WHITE); // Chữ trắng trên nền xanh đậm
+                        // Thêm hiệu ứng cho chữ nếu cần
+                        javafx.scene.effect.DropShadow dsCurrentName = new javafx.scene.effect.DropShadow();
+                        dsCurrentName.setColor(Color.rgb(0,0,0,0.7)); // Bóng đen nhẹ
+                        dsCurrentName.setRadius(3);
+                        dsCurrentName.setOffsetX(1);
+                        dsCurrentName.setOffsetY(1);
+                        nameLabel.setEffect(dsCurrentName);
+
+                        cardsCountLabel.setTextFill(Color.LIGHTGOLDENRODYELLOW); // Số bài màu vàng rất nhạt
                     } else { // Game đã kết thúc, có thể không cần thay đổi style hoặc đặt style mặc định cho tất cả
                          playerPanel.setStyle(
                                  "-fx-background-color: rgba(255, 255, 255, 0.3);" + // Nền trắng mờ 70% đục
                                          "-fx-background-radius: 10;"
                                      );
-                         nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : ""));
-                         nameLabel.setTextFill(Color.BLACK);
+                         nameLabel.setText(p.getName() + " (AI)");
+                         nameLabel.setTextFill(Color.LIGHTGOLDENRODYELLOW); // Chữ xám nhạt
+                         nameLabel.setEffect(null); // Bỏ bóng đổ nếu có
+                         cardsCountLabel.setTextFill(Color.LIGHTGOLDENRODYELLOW); 
                     }
                 }
             }
@@ -389,9 +421,33 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
                     System.out.println("updateGameState: Không phải lượt Human hoặc AI đang chơi - Nút Đánh bài và Bỏ lượt đã bị vô hiệu hóa.");
                     playerHandBox.getChildren().clear();
                     if (currentPlayer != null && currentPlayer.isAI()) {
-                         playerHandBox.getChildren().add(new Label("Đến lượt " + currentPlayer.getName() + " (AI)..."));
+                    	Label aiTurnLabel = new Label("Đến lượt " + currentPlayer.getName() + " (AI)...");
+                        aiTurnLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16)); // Font tùy chỉnh nếu muốn
+                        aiTurnLabel.setTextFill(Color.WHITE); // Đặt màu chữ thành trắng
+
+                        // Tùy chọn: Thêm bóng đổ cho chữ trắng dễ đọc trên nền ảnh
+                        javafx.scene.effect.DropShadow ds = new javafx.scene.effect.DropShadow();
+                        ds.setRadius(3);
+                        ds.setOffsetX(1.0);
+                        ds.setOffsetY(1.0);
+                        ds.setColor(Color.rgb(0, 0, 0, 0.75)); // Bóng đen mờ
+                        aiTurnLabel.setEffect(ds);
+                        
+                        playerHandBox.getChildren().add(aiTurnLabel);
                     } else {
-                         playerHandBox.getChildren().add(new Label("Chờ lượt..."));
+                    	Label waitingLabel = new Label("Chờ lượt...");
+                        waitingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16)); // Font tùy chỉnh nếu muốn
+                        waitingLabel.setTextFill(Color.WHITE); // Đặt màu chữ thành trắng
+
+                        // Tùy chọn: Thêm bóng đổ
+                        javafx.scene.effect.DropShadow dsWait = new javafx.scene.effect.DropShadow();
+                        dsWait.setRadius(3);
+                        dsWait.setOffsetX(1.0);
+                        dsWait.setOffsetY(1.0);
+                        dsWait.setColor(Color.rgb(0, 0, 0, 0.75));
+                        waitingLabel.setEffect(dsWait);
+
+                        playerHandBox.getChildren().add(waitingLabel);
                     }
                     selectedCards.clear();
                     waitingForInput = false;
@@ -502,6 +558,7 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         private Card card;
         private boolean selected;
         private ImageView cardImageView; // Để hiển thị ảnh quân bài
+        private static final double SELECTION_OFFSET_Y = -15; 
 
         // Kích thước mong muốn của quân bài (nên khớp với tỉ lệ ảnh của bạn)
         private static final double CARD_WIDTH = 80;
@@ -656,25 +713,24 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         // Thay thế updateSelectionBorder() bằng updateSelectionVisuals()
         private void updateSelectionVisuals() {
             if (selected) {
-                // Ví dụ: thêm hiệu ứng đổ bóng màu xanh dương để làm nổi bật
+                // 1. Làm cho quân bài nhô lên
+                this.setTranslateY(SELECTION_OFFSET_Y);
+
+                // 2. (Tùy chọn) Thêm hiệu ứng đổ bóng hoặc viền để làm nổi bật hơn
                 DropShadow glowEffect = new DropShadow();
-                glowEffect.setColor(Color.rgb(0, 120, 255, 0.8)); // Màu xanh dương sáng, hơi trong suốt
-                glowEffect.setWidth(25);  // Độ rộng của bóng
-                glowEffect.setHeight(25); // Độ cao của bóng
-                glowEffect.setRadius(10); // Bán kính mờ của bóng
-                glowEffect.setSpread(0.5); // Độ lan tỏa của bóng (0 đến 1)
+                glowEffect.setColor(Color.rgb(0, 150, 255, 0.9)); // Màu xanh dương sáng, khá rõ
+                glowEffect.setWidth(20);
+                glowEffect.setHeight(20);
+                glowEffect.setRadius(10);
+                glowEffect.setSpread(0.6); // Độ lan tỏa của bóng
                 cardImageView.setEffect(glowEffect);
 
-                // Hoặc bạn có thể dùng lại hiệu ứng nhấc quân bài lên:
-                // this.setTranslateY(-10); // Nhấc CardView lên 10 pixels
-
-                // Hoặc vẽ một viền xung quanh (cần thêm một Rectangle vào StackPane và quản lý visibility)
-                // Ví dụ:
-                // selectionRectangle.setVisible(true);
             } else {
-                cardImageView.setEffect(null); // Bỏ hiệu ứng đổ bóng
-                // this.setTranslateY(0); // Trả về vị trí cũ
-                // selectionRectangle.setVisible(false);
+                // 1. Trả quân bài về vị trí cũ
+                this.setTranslateY(0);
+
+                // 2. (Tùy chọn) Gỡ bỏ hiệu ứng đổ bóng
+                cardImageView.setEffect(null);
             }
         }
 
@@ -682,5 +738,49 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenMienNamGame> {
         public Card getCard() {
             return this.card;
         }
+    }
+    
+    private void styleGameButtonOnGreenBackground(Button button, boolean isPrimaryAction) {
+        button.setMaxWidth(Double.MAX_VALUE);
+        button.setFont(Font.font("Arial", FontWeight.BOLD, 15));
+        button.setPrefHeight(40);
+
+        String baseColor;
+        String hoverColor;
+        String textColor = "#004D40"; // Xanh lá cây rất đậm cho chữ
+
+        if (isPrimaryAction) { // Ví dụ: nút "Đánh bài"
+            baseColor = "#FFFFFF";    // Nền trắng
+            hoverColor = "#F5F5F5";   // Trắng xám khi hover
+        } else { // Các nút phụ
+            baseColor = "#E8F5E9";    // Nền xanh lá rất nhạt (gần như trắng)
+            hoverColor = "#C8E6C9";   // Xanh lá nhạt hơn khi hover
+        }
+
+        String baseStyle = String.format(
+            "-fx-background-color: %s; " +
+            "-fx-text-fill: %s; " +
+            "-fx-background-radius: 8; " +
+            "-fx-border-radius: 8; " +
+            "-fx-border-color: %s; " + // Viền cùng màu chữ hoặc màu xanh lá đậm hơn
+            "-fx-border-width: 1.5px; " +
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0.0, 0, 2);",
+            baseColor, textColor, textColor
+        );
+        String hoverStyle = String.format(
+            "-fx-background-color: %s; " +
+            "-fx-text-fill: %s; " +
+            "-fx-background-radius: 8; " +
+            "-fx-border-radius: 8; " +
+            "-fx-border-color: %s; " +
+            "-fx-border-width: 1.5px; " +
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.15), 7, 0.0, 0, 3);",
+            hoverColor, textColor, textColor
+        );
+
+        button.setStyle(baseStyle);
+        button.setOnMouseEntered(e -> button.setStyle(hoverStyle));
+        button.setOnMouseExited(e -> button.setStyle(baseStyle));
+        button.setCursor(javafx.scene.Cursor.HAND);
     }
 }

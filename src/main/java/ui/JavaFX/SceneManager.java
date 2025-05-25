@@ -392,7 +392,7 @@ public class SceneManager {
 	    bottomButtonBar.setAlignment(Pos.CENTER);
 	    VBox.setMargin(bottomButtonBar, new Insets(30, 0, 0, 0));
 
-	    Button backToMainMenuBtn = new Button("Về Menu Chính");
+	    Button backToMainMenuBtn = new Button("Menu chính");
 	    styleSelectionSceneButton(backToMainMenuBtn, "#7f8c8d", "#606f70", 180);
 	    backToMainMenuBtn.setOnAction(e -> showMainMenu());
 
@@ -408,7 +408,7 @@ public class SceneManager {
 	    Scene scene = new Scene(rootLayout);
 	    primaryStage.setScene(scene);
 	    // Listener sceneProperty sẽ tự động gọi forceMaximize()
-	    primaryStage.setTitle("Tùy Chỉnh Ván Chơi");
+	    primaryStage.setTitle("Tiến Lên Miền Nam");
 
 	    // CẬP NHẬT HIỂN THỊ CHO SCENE NÀY SAU KHI ĐÃ SET SCENE
 	    updateDisplayedValuesOnCustomizationScene(); // <<<<< THÊM DÒNG NÀY
