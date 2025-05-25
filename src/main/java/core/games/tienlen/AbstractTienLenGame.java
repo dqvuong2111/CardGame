@@ -102,7 +102,7 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
                 Card card = deck.drawCard(); if (card != null) player.addCard(card);
             }
         }
-        for (TienLenPlayer player : players) { player.sortHand(ruleSet.getCardComparator()); }
+        for (TienLenPlayer player : players) { player.sortHand(ruleSet.getCardComparator());}
 
         findStartingPlayerOfGameVariant(); // Gọi phương thức trừu tượng (lớp con cài đặt)
         
