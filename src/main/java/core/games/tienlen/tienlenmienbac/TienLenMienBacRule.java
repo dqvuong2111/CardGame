@@ -42,9 +42,19 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
             // Nếu cùng giá trị, TLMB thường không so chất để phân định hơn thua khi chặt.
             // Chất chỉ quan trọng khi xét 3 bích hoặc một số luật đặc biệt.
             // Để comparator này hoàn chỉnh, ta vẫn có thể so sánh chất (ví dụ để sắp xếp tay bài)
-            return Integer.compare(getSuitOrderValue(card1.getSuit()), getSuitOrderValue(card2.getSuit()));
+            return 0;
         }
     }
+    
+    private enum CardColor { RED, BLACK }
+    private CardColor getCardColorFromSuit(Card.Suit suit) {
+        if (suit == Card.Suit.HEARTS || suit == Card.Suit.DIAMONDS) {
+            return CardColor.RED;
+        } else {
+            return CardColor.BLACK;
+        }
+    }
+    
 
     @Override
     public Comparator<Card> getCardComparator() {
@@ -74,6 +84,20 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
             }
             // Nếu qua được các kiểm tra -> là sảnh TLMB hợp lệ
             return CombinationType.STRAIGHT; // Vẫn là STRAIGHT, nhưng đã được validate đồng chất
+        }
+        
+        if (basicType == TienLenVariantRuleSet.CombinationType.PAIR) {
+            // TienLenCombinationLogic (nếu chưa sửa) xác định đây là đôi về rank.
+            // Bây giờ ta kiểm tra thêm màu sắc.
+            // Giả định cards.size() == 2 vì basicType là PAIR
+            Card card1 = sortedCards.get(0); // Nên dùng sortedCards đã sắp xếp
+            Card card2 = sortedCards.get(1);
+
+            // Sử dụng phương thức getCardColor() từ lớp Card
+            if (getCardColorFromSuit(card1.getSuit()) != getCardColorFromSuit(card2.getSuit())) {
+                return CombinationType.INVALID; // Không phải đôi hợp lệ theo luật này vì khác màu
+            }
+            // Nếu cùng màu, nó vẫn là CombinationType.PAIR
         }
 
         // Đối với các bộ khác như PAIR, TRIPLE, FOUR_OF_KIND, THREE_PAIR_STRAIGHT, FOUR_PAIR_STRAIGHT
