@@ -22,6 +22,10 @@ public class Card implements Comparable<Card> {
 		}
 	}
 	
+	public enum CardColor {
+        RED, BLACK
+    }
+	
 	private final Suit suit;
 	private final Rank rank;
 	
@@ -37,6 +41,14 @@ public class Card implements Comparable<Card> {
 	public Rank getRank() {
 		return rank;
 	}
+	
+	public CardColor getCardColor() {
+        if (this.suit == Suit.HEARTS || this.suit == Suit.DIAMONDS) {
+            return CardColor.RED;
+        } else {
+            return CardColor.BLACK;
+        }
+    }
 
 	@Override
 	public String toString() {

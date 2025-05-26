@@ -46,15 +46,6 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
         }
     }
     
-    private enum CardColor { RED, BLACK }
-    private CardColor getCardColorFromSuit(Card.Suit suit) {
-        if (suit == Card.Suit.HEARTS || suit == Card.Suit.DIAMONDS) {
-            return CardColor.RED;
-        } else {
-            return CardColor.BLACK;
-        }
-    }
-    
 
     @Override
     public Comparator<Card> getCardComparator() {
@@ -94,12 +85,12 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
             Card card2 = sortedCards.get(1);
 
             // Sử dụng phương thức getCardColor() từ lớp Card
-            if (getCardColorFromSuit(card1.getSuit()) != getCardColorFromSuit(card2.getSuit())) {
+            if (card1.getCardColor() != card2.getCardColor()) {
                 return CombinationType.INVALID; // Không phải đôi hợp lệ theo luật này vì khác màu
             }
             // Nếu cùng màu, nó vẫn là CombinationType.PAIR
         }
-
+        
         // Đối với các bộ khác như PAIR, TRIPLE, FOUR_OF_KIND, THREE_PAIR_STRAIGHT, FOUR_PAIR_STRAIGHT
         // TLMB thường không yêu cầu đồng chất, nên kết quả từ TienLenCombinationLogic có thể là cuối cùng.
         // Nếu có luật nào khác, bạn thêm kiểm tra ở đây.
@@ -121,17 +112,80 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
         TienLenVariantRuleSet.CombinationType newType = (TienLenVariantRuleSet.CombinationType) getCombinationIdentifier(newCards);
         TienLenVariantRuleSet.CombinationType prevType = (TienLenVariantRuleSet.CombinationType) getCombinationIdentifier(previousCards);
 
-        // Ví dụ: TLMB yêu cầu sảnh phải cùng độ dài khi đánh đè (nếu chưa có trong logic chung)
-        if (newType == TienLenVariantRuleSet.CombinationType.STRAIGHT && prevType == TienLenVariantRuleSet.CombinationType.STRAIGHT) {
-            if (newCards.size() != previousCards.size()) {
-                return false; 
-            }
+        if (newType != prevType) {
+            return false; // Phải cùng loại bài (đơn với đơn, đôi với đôi, v.v.)
         }
-        // Các quy tắc chặt heo, tứ quý của TLMB có thể khác TLMN một chút,
-        // bạn có thể cần tinh chỉnh logic trong TienLenMienNamPlayabilityLogic
-        // hoặc thêm các kiểm tra cụ thể ở đây nếu logic chung không đủ.
-        
-        return true; // Nếu đã qua các kiểm tra chung và các kiểm tra đặc thù (nếu có)
+
+        // Sắp xếp để dễ lấy lá bài (ví dụ lá đầu tiên cho chất của sảnh/đơn, hoặc màu của đôi)
+        List<Card> sortedNewCards = new ArrayList<>(newCards);
+        Collections.sort(sortedNewCards, getCardComparator());
+        List<Card> sortedPreviousCards = new ArrayList<>(previousCards);
+        Collections.sort(sortedPreviousCards, getCardComparator());
+
+        Card newRep = getRepresentativeCardForCombination(sortedNewCards);
+        Card prevRep = getRepresentativeCardForCombination(sortedPreviousCards);
+
+        if (newRep == null || prevRep == null) return false; // Không có lá đại diện
+
+        switch (newType) {
+            case SINGLE:
+                if (newCards.size() != 1 || previousCards.size() != 1) return false; // Đảm bảo là đơn
+                // 1. Phải đồng chất (cùng suit)
+                if (sortedNewCards.get(0).getSuit() != sortedPreviousCards.get(0).getSuit()) {
+                    return false;
+                }
+                // 2. Phải lớn hơn (đã đồng chất, giờ so sánh rank qua comparator)
+                return getCardComparator().compare(newRep, prevRep) > 0;
+
+            case PAIR: // Đôi (đã được xác định là cùng rank và cùng màu bởi getCombinationIdentifier)
+                if (newCards.size() != 2 || previousCards.size() != 2) return false;
+                // 1. Phải đồng màu (hai đôi phải cùng màu đỏ, hoặc cùng màu đen)
+                // Màu của đôi được quyết định bởi màu của các lá bài trong đôi (chúng giống nhau)
+                if (sortedNewCards.get(0).getCardColor() != sortedPreviousCards.get(0).getCardColor()) {
+                    return false;
+                }
+                // 2. Phải lớn hơn (so sánh lá đại diện)
+                return getCardComparator().compare(newRep, prevRep) > 0;
+
+            case TRIPLE:
+                if (newCards.size() != 3 || previousCards.size() != 3) return false;
+                // Luật "sám cô đồng chất lẻ x" của bạn rất đặc thù và phức tạp để tổng quát hóa
+                // nếu không có quy tắc rõ ràng về việc xác định "chất lẻ" đó.
+                // Hiện tại, chúng ta sẽ bỏ qua yêu cầu "đồng chất" cho sám cô khi chặt nhau
+                // và chỉ yêu cầu rank cao hơn.
+                // NẾU BẠN MUỐN MỘT QUY TẮC ĐƠN GIẢN HƠN CHO "ĐỒNG CHẤT": ví dụ, lá bài lớn nhất
+                // của bộ ba mới phải cùng chất với lá bài lớn nhất của bộ ba cũ.
+                // if (newRep.getSuit() != prevRep.getSuit()) {
+                //     return false;
+                // }
+                System.out.println("Cảnh báo: Luật 'sám cô đồng chất' phức tạp chưa được triển khai đầy đủ. Hiện tại chỉ so sánh rank cho bộ ba.");
+                return getCardComparator().compare(newRep, prevRep) > 0;
+
+            case STRAIGHT: // Sảnh (đã được xác định là đồng chất bởi getCombinationIdentifier)
+                // 1. Phải cùng số lá
+                if (sortedNewCards.size() != sortedPreviousCards.size()) {
+                    return false;
+                }
+                // 2. Phải đồng chất (hai sảnh phải cùng một suit, ví dụ cùng là sảnh Cơ)
+                // Chất của sảnh được quyết định bởi chất của các lá bài trong sảnh (chúng giống nhau)
+                if (sortedNewCards.get(0).getSuit() != sortedPreviousCards.get(0).getSuit()) {
+                    return false;
+                }
+                // 3. Phải lớn hơn (so sánh lá đại diện - lá lớn nhất của sảnh)
+                return getCardComparator().compare(newRep, prevRep) > 0;
+            
+            default:
+                // Các loại khác không được đề cập (ví dụ FOUR_OF_KIND đánh thường)
+                // có thể tuân theo logic chung hơn nếu không có luật đồng chất/đồng màu.
+                // Hoặc, nếu chúng cũng phải tuân theo một quy tắc tương tự, bạn cần thêm vào đây.
+                // Ví dụ, nếu đánh tứ quý thường (không phải chặt heo), có cần đồng màu/chất không?
+                // Theo luật bạn mô tả, có vẻ không.
+                // Vậy, nếu là loại khác mà logic chặt đặc biệt không xử lý,
+                // chúng ta có thể quay lại so sánh cơ bản của TienLenPlayabilityLogic nếu nó phù hợp.
+                // Tuy nhiên, để chặt chẽ, nếu không có luật cụ thể, ta có thể không cho phép.
+                // return TienLenPlayabilityLogic.canPlayAfter(newCards, previousCards, this); // Cân nhắc
+                return false; // An toàn hơn là không cho phép nếu không có luật rõ ràng
+        }
     }
     
     // ... (getRepresentativeCardForCombination, isCardValidInStraight)
