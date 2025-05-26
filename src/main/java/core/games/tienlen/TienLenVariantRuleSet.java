@@ -9,6 +9,15 @@ import java.util.List;
 import core.Card;
 
 public interface TienLenVariantRuleSet {
+	
+	 enum CombinationType {
+	        SINGLE, PAIR, TRIPLE, STRAIGHT,
+	        FOUR_OF_KIND,
+	        THREE_PAIR_STRAIGHT, // Đôi thông 3
+	        FOUR_PAIR_STRAIGHT,  // Đôi thông 4
+	        INVALID
+	    }
+	
     boolean isValidCombination(List<Card> cards);
     boolean canPlayAfter(List<Card> newCards, List<Card> previousCards);
     Comparator<Card> getCardComparator();

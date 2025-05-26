@@ -175,7 +175,7 @@ public class SceneManager {
 	    }
 
 	 // Trong phương thức createMainMenuLayout()
-	    Label titleLabel = new Label("TIẾN LÊN MIỀN NAM");
+	    Label titleLabel = new Label("GAME BÀI");
 
 	    // Font đậm, có thể là Arial Bold như cũ hoặc Arial Black nếu muốn nổi bật hơn
 	    titleLabel.setFont(Font.font("Arial", FontWeight.BLACK, 54)); // EXTRA_BOLD nếu muốn đậm hơn BOLD
