@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> extends Game<R> implements Runnable, TienLenGameContext {
 
@@ -140,13 +141,18 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
 
     @Override public void run() { runGameLoop(); }
 
-    @Override
     public void runGameLoop() {
-        while (getGeneralGameState() == GeneralGameState.RUNNING && !isFinished) {
+        while (getGeneralGameState() == GeneralGameState.RUNNING && !isFinished && !Thread.currentThread().isInterrupted()) {
             TienLenPlayer currentPlayer = getCurrentPlayer();
+
             if (currentPlayer.hasNoCards()) {
+                // Nếu người chơi hiện tại đã hết bài, ghi log trước khi chuyển người
+                // printAllPlayerHandsForDebug("Trước khi chuyển người do " + currentPlayer.getName() + " hết bài.");
                 moveToNextActivePlayer();
-                if (checkGameOver()) { setGeneralGameState(GeneralGameState.GAME_OVER); break; }
+                if (checkGameOver()) { 
+                    setGeneralGameState(GeneralGameState.GAME_OVER); 
+                    break; 
+                }
                 continue;
             }
 
@@ -155,45 +161,82 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
             notifyPlayerTurnStarted(currentPlayer);
 
             List<Card> cardsAttempted = turnProcessor.getPlayerAction(currentPlayer);
+            String actionLogContext = currentPlayer.getName(); // Dùng để tạo thông điệp log chi tiết
 
-            if (cardsAttempted == null || cardsAttempted.isEmpty()) {
+            // Xử lý hành động của người chơi (đánh hoặc bỏ lượt)
+            if (cardsAttempted == null || cardsAttempted.isEmpty()) { // Người chơi bỏ lượt
                 if (playValidator.canPlayerPass(currentPlayer)) {
                     roundManager.processPassedTurn(currentPlayer);
-                    if (roundManager.manageRoundEndAndNewRound()) { /* New round started by RM */ }
+                    actionLogContext += " đã BỎ LƯỢT.";
+                    if (roundManager.manageRoundEndAndNewRound()) { /* Vòng mới */ }
                     else { moveToNextActivePlayer(); }
-                } else {
+                } else { // Không thể bỏ lượt
+                    actionLogContext += " cố gắng BỎ LƯỢT không hợp lệ.";
                     if (currentPlayer.isAI()) {
-                        notifyMessage(currentPlayer.getName() + " (AI) bỏ lượt không hợp lệ. Mất lượt.");
-                        roundManager.processPassedTurn(currentPlayer);
-                        if (roundManager.manageRoundEndAndNewRound()) {} else { moveToNextActivePlayer(); }
+                        // Xử lý AI cố bỏ lượt không hợp lệ (ví dụ: lượt đầu 3 bích)
+                        // Như đã thảo luận, AI strategy nên được sửa để không rơi vào đây ở lượt đầu.
+                        // Nếu vẫn xảy ra, game có thể cần cơ chế xử lý lỗi đặc biệt cho AI.
+                        notifyMessage(currentPlayer.getName() + " (AI) bỏ lượt không hợp lệ nhưng bắt buộc phải đánh.");
+                        // Game có thể bị kẹt nếu không có logic xử lý AI bắt buộc phải đánh mà strategy lỗi.
                     }
-                    continue;
+                    // Với Human, vòng lặp sẽ tiếp tục và UI sẽ chờ input lại.
                 }
-            } else {
+            } else { // Người chơi đánh bài
                 if (playValidator.isValidPlayForCurrentContext(cardsAttempted, currentPlayer)) {
                     roundManager.processPlayedCards(currentPlayer, cardsAttempted);
+                    actionLogContext += " đã ĐÁNH: " + cardsAttempted.stream().map(Card::toString).collect(Collectors.joining(" "));
                     if (currentPlayer.hasNoCards()) {
                         roundManager.handlePlayerFinish(currentPlayer);
+                        actionLogContext += " (HẾT BÀI)";
                     }
-                    if (roundManager.manageRoundEndAndNewRound()) { /* New round */ }
+                    if (roundManager.manageRoundEndAndNewRound()) { /* Vòng mới */ }
                     else if (!currentPlayer.hasNoCards()) { moveToNextActivePlayer(); }
                     else if (currentPlayer.hasNoCards() && players.stream().filter(p -> !p.hasNoCards()).count() > 0) {
                         moveToNextActivePlayer();
                     }
-                } else {
+                } else { // Đánh bài không hợp lệ
+                    actionLogContext += " cố gắng ĐÁNH không hợp lệ: " + cardsAttempted.stream().map(Card::toString).collect(Collectors.joining(" "));
                     if (currentPlayer.isAI()) {
-                        notifyMessage(currentPlayer.getName() + " (AI) chọn bài không hợp lệ. Bỏ lượt.");
-                        roundManager.processPassedTurn(currentPlayer);
-                        if (roundManager.manageRoundEndAndNewRound()) {} else { moveToNextActivePlayer(); }
+                        notifyMessage(currentPlayer.getName() + " (AI) chọn bài không hợp lệ. Coi như bỏ lượt.");
+                        roundManager.processPassedTurn(currentPlayer); // Xử lý như một lượt bỏ qua
+                         actionLogContext += " (Xử lý như bỏ lượt)";
+                        if (roundManager.manageRoundEndAndNewRound()) { /* Vòng mới */ }
+                        else { moveToNextActivePlayer(); }
                     }
-                    continue;
+                    // Với Human, vòng lặp sẽ tiếp tục và UI sẽ chờ input lại.
                 }
             }
-            if (checkGameOver()) { setGeneralGameState(GeneralGameState.GAME_OVER); break; }
-            try { if (getGeneralGameState() == GeneralGameState.RUNNING) TimeUnit.MILLISECONDS.sleep(100); }
-            catch (InterruptedException e) { Thread.currentThread().interrupt(); notifyMessage("Vòng lặp game bị gián đoạn."); setGeneralGameState(GeneralGameState.GAME_OVER); break; }
+
+            // *** IN BÀI CỦA TẤT CẢ NGƯỜI CHƠI SAU KHI LƯỢT CHƠI HOÀN TẤT ***
+            // Chỉ in nếu actionLogContext đã được cập nhật (tức là có hành động diễn ra)
+            if (!actionLogContext.equals(currentPlayer.getName())) {
+                 printAllPlayerHandsForDebug("Trạng thái sau khi " + actionLogContext);
+            } else if (cardsAttempted == null || cardsAttempted.isEmpty()) { 
+                // Trường hợp người chơi không thể bỏ lượt và không có input (ví dụ Human chưa input)
+                // Có thể bạn muốn in ra ở đây để xem trạng thái chờ.
+                // printAllPlayerHandsForDebug("Đang chờ hành động từ " + currentPlayer.getName());
+            }
+
+
+            if (checkGameOver()) {
+                setGeneralGameState(GeneralGameState.GAME_OVER);
+                break;
+            }
+            try {
+                if (getGeneralGameState() == Game.GeneralGameState.RUNNING && !Thread.currentThread().isInterrupted()) {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                notifyMessage("Vòng lặp game bị gián đoạn.");
+                setGeneralGameState(GeneralGameState.GAME_OVER);
+                break;
+            }
+        } // Kết thúc while
+
+        if (this.isFinished || getGeneralGameState() == Game.GeneralGameState.GAME_OVER) {
+            finalizeGameExecution();
         }
-        finalizeGameExecution();
     }
 
      protected void moveToNextActivePlayer() {
@@ -254,4 +297,52 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
 
     // --- Phương thức trừu tượng cho biến thể game ---
     protected abstract void findStartingPlayerOfGameVariant();
+    
+    protected void printAllPlayerHandsForDebug(String contextMessage) {
+        System.out.println("\nDEBUG LOG: " + contextMessage);
+        System.out.println("========== BÀI TRÊN TAY TẤT CẢ NGƯỜI CHƠI ==========");
+        if (this.players != null && !this.players.isEmpty()) {
+            for (TienLenPlayer player : this.players) {
+                List<Card> handToPrint = new ArrayList<>(player.getHand());
+                
+                // Sắp xếp tay bài để output log được nhất quán và dễ đọc
+                // Sử dụng comparator của ruleSet nếu có, nếu không dùng comparator mặc định của Card
+                if (this.ruleSet != null && this.ruleSet.getCardComparator() != null) {
+                    handToPrint.sort(this.ruleSet.getCardComparator());
+                } else {
+                    Collections.sort(handToPrint); // Card cần implement Comparable
+                }
+
+                String handString = handToPrint.stream()
+                                               .map(Card::toString) // Giả sử Card.toString() đã được định nghĩa tốt
+                                               .collect(Collectors.joining(" "));
+                
+                System.out.printf("  %-20s (%2d lá): %s%n", 
+                                  player.getName() + (player.isAI() ? " (AI)" : ""), 
+                                  player.getHand().size(), // Lấy số lượng lá bài gốc
+                                  handString.isEmpty() ? "[HẾT BÀI]" : handString);
+            }
+        } else {
+            System.out.println("  Không có danh sách người chơi để hiển thị.");
+        }
+
+        // In thêm bài trên bàn để có ngữ cảnh đầy đủ
+        if (this.tienLenState != null && this.tienLenState.getLastPlayedCards() != null) {
+            List<Card> tableCards = this.tienLenState.getLastPlayedCards();
+            List<Card> sortedTableCards = new ArrayList<>(tableCards); // Tạo bản sao để sắp xếp cho log
+             if (this.ruleSet != null && this.ruleSet.getCardComparator() != null) {
+                sortedTableCards.sort(this.ruleSet.getCardComparator());
+            } else {
+                Collections.sort(sortedTableCards);
+            }
+
+            String tableCardsString = sortedTableCards.stream()
+                                                    .map(Card::toString)
+                                                    .collect(Collectors.joining(" "));
+            System.out.printf("  Bài trên bàn         (%2d lá): %s%n", 
+                              tableCards.size(), 
+                              tableCards.isEmpty() ? "[BÀN TRỐNG]" : tableCardsString);
+        }
+        System.out.println("==================== KẾT THÚC LOG ====================\n");
+    }
 }

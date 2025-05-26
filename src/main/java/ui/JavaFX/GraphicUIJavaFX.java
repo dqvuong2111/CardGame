@@ -394,22 +394,32 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<AbstractTienLenGame<? ext
     
   
     
+
     private void handleNewGameButton(ActionEvent event) {
-        if (game != null) {
-            selectedCards.clear(); 
-            waitingForInput = false;
-            // Quan trọng: Đảm bảo SceneManager cũng được thông báo để có thể dọn dẹp game cũ nếu cần
-            // và chuẩn bị cho game mới nếu logic tạo game nằm trong SceneManager.
-            // Tuy nhiên, game.resetGame() thường sẽ xử lý việc khởi tạo lại game engine.
-             if (sceneManager != null) {
-                // sceneManager.stopCurrentGame(); // Đã có trong SceneManager khi quay về Menu,
-                                                // ở đây game.resetGame() sẽ stop game loop cũ.
-             }
-            game.resetGame(); 
-            // Sau game.resetGame(), notifyGameStateUpdated() sẽ được gọi từ game engine,
-            // điều này sẽ kích hoạt this.updateGameState() để vẽ lại UI cho ván mới.
+    if (game != null) {
+        selectedCards.clear(); 
+        waitingForInput = false;
+        
+        System.out.println("GraphicUIJavaFX: Nút Ván Mới được nhấn. Đang gọi game.resetGame().");
+        game.resetGame(); // Dừng game loop cũ, reset trạng thái, chia bài mới.
+                          // Sau lệnh này, game.getGeneralGameState() nên là RUNNING.
+
+        // SAU KHI RESET, CẦN KHỞI ĐỘNG LẠI GAME LOOP CHO VÁN MỚI
+        if (game.getGeneralGameState() == Game.GeneralGameState.RUNNING) {
+            System.out.println("GraphicUIJavaFX: Game đã reset và ở trạng thái RUNNING. Đang gọi game.startGameLoop().");
+            game.startGameLoop(); // Khởi động lại vòng lặp game (sẽ tạo thread mới nếu cần)
+        } else {
+            // Trường hợp này không nên xảy ra nếu resetGame() hoạt động đúng.
+            String errorMessage = "Lỗi sau khi reset: Game không ở trạng thái RUNNING. Vòng lặp không được khởi động. Trạng thái hiện tại: " + game.getGeneralGameState();
+            System.err.println(errorMessage);
+            if (gameMessageComponent != null) {
+                gameMessageComponent.setMessage(errorMessage);
+            }
         }
+    } else {
+        System.err.println("GraphicUIJavaFX: Nút Ván Mới được nhấn nhưng game là null.");
     }
+}
 
     
     private String formatCardList(List<Card> cards) {
