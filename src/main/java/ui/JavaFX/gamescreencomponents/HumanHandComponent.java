@@ -117,4 +117,10 @@ public class HumanHandComponent extends VBox {
     public void clearHand() {
         playerHandBox.getChildren().clear();
     }
+    
+    public void setHandTitle(String title) {
+        if (humanHandTitle != null) {
+            humanHandTitle.setText(title);
+        }
+    }
 }

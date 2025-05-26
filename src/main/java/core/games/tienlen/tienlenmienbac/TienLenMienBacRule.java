@@ -14,7 +14,7 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
 
     // Giữ lại Comparator và các hàm getTienLenBacValue của Miền Bắc
     private static final Comparator<Card> TIEN_LEN_MIEN_BAC_CARD_COMPARATOR = new TienLenMienBacCardComparator();
-    public static int getTienLenBacValue(Card card) {
+    public static int getTienLenValue(Card card) {
         if (card.getRank() == Card.Rank.TWO) return 15; // Heo (2) là lớn nhất
         if (card.getRank() == Card.Rank.ACE) return 14; // Át
         if (card.getRank() == Card.Rank.KING) return 13; // Già
@@ -34,8 +34,8 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
     private static class TienLenMienBacCardComparator implements Comparator<Card> {
         @Override
         public int compare(Card card1, Card card2) {
-            int value1 = getTienLenBacValue(card1);
-            int value2 = getTienLenBacValue(card2);
+            int value1 = getTienLenValue(card1);
+            int value2 = getTienLenValue(card2);
             if (value1 != value2) {
                 return Integer.compare(value1, value2);
             }
@@ -121,12 +121,12 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
 
     @Override
     public boolean isCardValidInStraight(Card card) {
-        return getTienLenBacValue(card) < getTwoRankValue(); 
+        return getTienLenValue(card) < getTwoRankValue(); 
     }
 
     @Override
     public int getCardRankValue(Card card) {
-        return getTienLenBacValue(card);
+        return getTienLenValue(card);
     }
 
     @Override
