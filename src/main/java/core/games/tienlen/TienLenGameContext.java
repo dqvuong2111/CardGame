@@ -1,9 +1,8 @@
-package core.games.tienlen; // Đảm bảo đúng package
+package core.games.tienlen;
 
 import core.Card;
 import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
-// import core.RuleSet; // Không cần trực tiếp nếu TienLenVariantRuleSet đã extends
 import java.util.List;
 
 public interface TienLenGameContext {
@@ -16,10 +15,10 @@ public interface TienLenGameContext {
     List<TienLenPlayer> getPlayers();
     TienLenPlayer getCurrentPlayer();
     int getCurrentPlayerIndex();
-    TienLenVariantRuleSet getRuleSet(); // Sử dụng TienLenVariantRuleSet
+    TienLenVariantRuleSet getRuleSet();
     List<TienLenPlayer> getWinners();
     int getCurrentWinnerRank();
-    TienLenGameState getCurrentTienLenState(); // <<--- Sử dụng TienLenGameState top-level
+    TienLenGameState getCurrentTienLenState();
 
     // Setters hoặc các phương thức hành động để thay đổi trạng thái
     void setLastPlayedCards(List<Card> cards);
@@ -30,7 +29,7 @@ public interface TienLenGameContext {
     void setPlayerWhoPlayedLastValidCards(TienLenPlayer player);
     void setCurrentPlayerByIndex(int index);
     void addWinner(TienLenPlayer winner, int rank);
-    void setCurrentTienLenState(TienLenGameState newState); // <<--- Sử dụng TienLenGameState top-level
+    void setCurrentTienLenState(TienLenGameState newState);
 
     // Lấy input từ người chơi
     List<Card> getHumanInputSynchronously();
@@ -43,5 +42,4 @@ public interface TienLenGameContext {
     void notifyPlayerPassed(TienLenPlayer player);
     void notifyRoundStarted(TienLenPlayer startingPlayer);
     void notifyPlayerEliminated(TienLenPlayer player);
-    // void notifyGameStateUpdated(); // Phương thức này thường được gọi nội bộ bởi TienLenGame
 }

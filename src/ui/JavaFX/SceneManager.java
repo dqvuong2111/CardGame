@@ -25,7 +25,6 @@ import ui.JavaFX.Scenes.MainMenuSceneView;
 import ui.JavaFX.Scenes.PlayerCustomizationSceneView;
 import ui.JavaFX.Scenes.SelectAIStrategySceneView;
 import ui.JavaFX.Scenes.SelectGameVariantSceneView;
-import ui.JavaFX.Scenes.SelectGraphicScene;
 import ui.JavaFX.Scenes.SelectNumberOfHumansSceneView;
 
 // Import các lớp Scene View mới
@@ -37,7 +36,7 @@ import java.util.List;
 
 public class SceneManager {
     private Stage primaryStage;
-    private CardGameGUIJavaFX gameGUI;
+    private GraphicUIJavaFX gameGUI;
     private AbstractTienLenGame<?> currentGame;
 
     public enum GameVariant {
@@ -49,27 +48,18 @@ public class SceneManager {
         @Override public String toString() { return displayName; }
     }
 
-    public enum Graphic {
-        BASIC("Basic"),
-        GRAPHIC("Graphic");
-        private final String displayName;
-        Graphic(String displayName) { this.displayName = displayName; }
-        @Override public String toString() { return displayName; }
-    }
-    
     public static final int FIXED_TOTAL_PLAYERS = 4; // Giữ lại là public static final
     private int numberOfHumanPlayers = 1;
     private int numberOfAIPlayers = FIXED_TOTAL_PLAYERS - numberOfHumanPlayers;
-    private GameVariant selectedGameVariant = GameVariant.TIEN_LEN_MIEN_NAM;
+    private GameVariant selectedGameVariant = GameVariant.SAM_LOC;
     private TienLenAI.StrategyType aiStrategy = TienLenAI.StrategyType.SMART;
-    private Graphic graphic = Graphic.BASIC;
+    private boolean requiredThreeSpades = true;
 
     // Các label trên màn hình PlayerCustomization mà các scene con cần cập nhật
     private Label currentHumanPlayersDisplayLabel; // Từ PlayerCustomizationSceneView
     private Label currentAIPlayersDisplayLabel;    // Từ PlayerCustomizationSceneView
     private Label currentAIStrategyDisplayLabel;   // Từ PlayerCustomizationSceneView
     private Label currentGameVariantDisplayLabel;
-    private Label currentGraphicDisplayLabel;
 
 
     public SceneManager(Stage primaryStage) {
@@ -96,16 +86,17 @@ public class SceneManager {
     }
 
     // Phương thức để PlayerCustomizationSceneView đăng ký các label của nó
-    public void setPlayerCustomizationLabels(Label humanLabel, Label aiLabel, Label strategyLabel, Label variantLabel, Label graphicLabel) {
+    public void setPlayerCustomizationLabels(Label humanLabel, Label aiLabel, Label strategyLabel, Label variantLabel) {
         this.currentHumanPlayersDisplayLabel = humanLabel;
         this.currentAIPlayersDisplayLabel = aiLabel;
         this.currentAIStrategyDisplayLabel = strategyLabel;
-        this.currentGameVariantDisplayLabel = variantLabel;
-        this.currentGraphicDisplayLabel = graphicLabel;
-         // LƯU LẠI LABEL LOẠI GAME
+        this.currentGameVariantDisplayLabel = variantLabel; // LƯU LẠI LABEL LOẠI GAME
         updateDisplayedValuesOnCustomizationScene(); // Cập nhật tất cả các label lần đầu
     }
     
+    
+
+
     public void showPlayerCustomizationScene() {
         PlayerCustomizationSceneView customizationView = new PlayerCustomizationSceneView(this);
         Parent root = customizationView.createContent();
@@ -134,17 +125,11 @@ public class SceneManager {
         updateDisplayedValuesOnCustomizationScene(); // Đảm bảo label này cũng được cập nhật nếu nó là một phần của các label được quản lý tập trung
     }
 
-    public void setSelectedGraphic(Graphic graphic) {
-        this.graphic = graphic;
-        updateDisplayedValuesOnCustomizationScene(); // Đảm bảo label này cũng được cập nhật nếu nó là một phần của các label được quản lý tập trung
-    }
-
     // Getter cho các giá trị cấu hình để SceneView có thể khởi tạo UI đúng
     public int getNumberOfHumanPlayers() { return numberOfHumanPlayers; }
     public int getNumberOfAIPlayers() { return numberOfAIPlayers; } // Tính toán lại nếu cần
     public TienLenAI.StrategyType getAiStrategy() { return aiStrategy; }
     public GameVariant getSelectedGameVariant() { return selectedGameVariant; }
-    public Graphic getGraphic() { return graphic; }
 
 
     // Cập nhật các label trên màn hình PlayerCustomization
@@ -165,10 +150,6 @@ public class SceneManager {
         if (currentGameVariantDisplayLabel != null) {
             currentGameVariantDisplayLabel.setText(this.selectedGameVariant.toString());
         }
-        // CẬP NHẬT CHO LABEL LOẠI GAME
-        if (currentGraphicDisplayLabel != null) {
-            currentGraphicDisplayLabel.setText(this.graphic.toString());
-        }
     }
 
     public void showSelectGameVariantScene(Label gameVariantDisplayLabel) {
@@ -179,15 +160,6 @@ public class SceneManager {
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Chọn Chế Độ Chơi");
-        // Platform.runLater(this::forceMaximize); // Gọi nếu cần và không dùng listener
-    }
-
-    public void showSelectGraphicScene(Label graphicDisplayLabel) {
-        SelectGraphicScene selectGraphicView = new SelectGraphicScene(this, graphicDisplayLabel);
-        Parent root = selectGraphicView.createContent();
-        Scene scene = new Scene(root);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("Chọn Loại Giao diện");
         // Platform.runLater(this::forceMaximize); // Gọi nếu cần và không dùng listener
     }
     
@@ -258,17 +230,13 @@ public class SceneManager {
         }
         System.out.println("  - Đã tạo currentGame: " + currentGame.getName());
         
-        if (graphic == Graphic.BASIC) {
-            gameGUI = new BasicUIFX(currentGame, primaryStage);
-        } else if (graphic == Graphic.GRAPHIC) {
-            gameGUI = new GraphicUIJavaFX(currentGame, primaryStage, this);
-        }
+        gameGUI = new GraphicUIJavaFX(currentGame, primaryStage, this);
         // Constructor của GraphicUIJavaFX đã gọi initGUI() và primaryStage.setScene()
 
         primaryStage.setTitle(currentGame.getName() + " - Đang Chơi");
         // forceMaximize();
 
-        currentGame.dealCards(currentGame.getRuleSet().getCardsPerPlayer()); 
+        currentGame.dealCards(); 
         // gameGUI.updateGameState(); // Sẽ được gọi qua event listener
         currentGame.setGeneralGameState(Game.GeneralGameState.RUNNING);
         currentGame.startGameLoop();
@@ -279,13 +247,14 @@ public class SceneManager {
     // Helper để lấy AI Strategy Implementation (bạn đã có tương tự)
     public TienLenAIStrategy getAIStrategyImpl(TienLenAI.StrategyType type) {
         if (selectedGameVariant == GameVariant.SAM_LOC) {
+            requiredThreeSpades = false;
         }
         // ... (return new RandomStrategy(), GreedyStrategy(), SmartStrategy())
         switch (type) {
-            case RANDOM: return new core.ai.tienlenai.strategies.RandomStrategy();
-            case GREEDY: return new core.ai.tienlenai.strategies.GreedyStrategy();
+            case RANDOM: return new core.ai.tienlenai.strategies.RandomStrategy(requiredThreeSpades);
+            case GREEDY: return new core.ai.tienlenai.strategies.GreedyStrategy(requiredThreeSpades);
             case SMART:
-            default: return new core.ai.tienlenai.strategies.SmartStrategy();
+            default: return new core.ai.tienlenai.strategies.SmartStrategy(requiredThreeSpades);
         }
     }
 

@@ -1,18 +1,19 @@
-// File: core/AIStrategy/SmartStrategy.java
 package core.ai.tienlenai.strategies;
 
 import core.Card;
+import core.ai.helpers.CombinationFinder;
+import core.ai.helpers.PlayableMoveGenerator;
+import core.ai.helpers.RemainingCardsValidator;
 import core.ai.tienlenai.TienLenAIStrategy;
-import core.ai.utils.CombinationFinder; // Vẫn có thể dùng để phân tích tay bài nếu cần cho các heuristic phụ
-import core.ai.utils.PlayableMoveGenerator;
 import core.games.tienlen.TienLenVariantRuleSet;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 
 public class SmartStrategy implements TienLenAIStrategy {
-    private static final Card THREE_SPADES = new Card(Card.Suit.SPADES, Card.Rank.THREE);
+    private Random random = new Random();
 
     @Override
     public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
@@ -20,11 +21,12 @@ public class SmartStrategy implements TienLenAIStrategy {
             return new ArrayList<>();
         }
 
-        // 1. XỬ LÝ LƯỢT ĐẦU TIÊN CỦA TOÀN BỘ VÁN GAME (3 BÍCH)
+        // XỬ LÝ LƯỢT ĐẦU TIÊN CỦA TOÀN BỘ VÁN GAME (3 BÍCH)
         if (isFirstTurnOfEntireGame) {
+        	if(ruleSet.startingCard() == null) return List.of(currentHand.get(random.nextInt(currentHand.size())));
             // Logic này vẫn giữ: ưu tiên đánh tổ hợp nhỏ nhất chứa 3 Bích để qua lượt đầu
-            if (currentHand.contains(THREE_SPADES)) {
-                List<List<Card>> playsWithThreeSpades = findPlaysContainingCard(currentHand, THREE_SPADES, ruleSet, lastPlayedCards);
+            if (ruleSet.hasStartingCard(currentHand) && ruleSet.startingCard() != null) {
+                List<List<Card>> playsWithThreeSpades = findPlaysContainingCard(currentHand, ruleSet.startingCard(), ruleSet, lastPlayedCards);
                 if (!playsWithThreeSpades.isEmpty()) {
                     playsWithThreeSpades.sort(
                         Comparator.comparingInt((List<Card> list) -> list.size())
@@ -39,46 +41,43 @@ public class SmartStrategy implements TienLenAIStrategy {
             return new ArrayList<>(); // Không có 3 Bích hoặc không tạo được bộ hợp lệ, phải bỏ lượt
         }
 
-        // 2. ƯU TIÊN CÁC NƯỚC ĐI "CHẶT" ĐẶC BIỆT NẾU CÓ LỢI
-        // (Logic này cần được xem xét cẩn thận xem có nên override ưu tiên "nhiều lá nhất" không)
-        // Ví dụ: Tứ quý (4 lá) có thể chặt Heo (1 lá). Nếu chỉ xét "nhiều lá nhất", AI có thể bỏ qua cơ hội chặt Heo
-        // để đánh một sảnh 5 lá (nếu đang mở đầu vòng).
-        // Do đó, logic chặt đặc biệt nên được ưu tiên hơn.
+        // ƯU TIÊN CÁC NƯỚC ĐI "CHẶT" ĐẶC BIỆT NẾU CÓ LỢI
         List<Card> specialChumpingPlay = findSpecialChumpingPlay(currentHand, lastPlayedCards, ruleSet);
         if (!specialChumpingPlay.isEmpty()) {
-            return specialChumpingPlay;
+            if(!RemainingCardsValidator.checkRemainingCard(currentHand, specialChumpingPlay)) return specialChumpingPlay;
         }
 
-        // 3. TÌM TẤT CẢ CÁC NƯỚC ĐI HỢP LỆ THÔNG THƯỜNG
+        // TÌM TẤT CẢ CÁC NƯỚC ĐI HỢP LỆ THÔNG THƯỜNG
         List<List<Card>> allPlayableMoves = new ArrayList<>();
 
         allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableSingles(currentHand, lastPlayedCards, ruleSet));
         allPlayableMoves.addAll(PlayableMoveGenerator.findPlayablePairs(currentHand, lastPlayedCards, ruleSet));
         allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableTriples(currentHand, lastPlayedCards, ruleSet));
         allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableStraights(currentHand, lastPlayedCards, ruleSet));
-        // Tứ quý thông thường (không phải để chặt heo) cũng là một lựa chọn
-        // Nếu findPlayableFourOfAKinds đã bao gồm cả trường hợp đánh thường và chặt, thì không cần gọi lại
-        // Nhưng nếu nó chỉ trả về khi có thể chặt, thì cần một hàm khác cho Tứ Quý đánh thường.
-        // Giả sử PlayableMoveGenerator.findPlayableFourOfAKinds xử lý cả 2 trường hợp dựa trên lastPlayedCards
+
         allPlayableMoves.addAll(PlayableMoveGenerator.findPlayableFourOfAKinds(currentHand, lastPlayedCards, ruleSet));
-        // (Thêm các loại đôi thông nếu PlayableMoveGenerator hỗ trợ)
+  
 
         if (allPlayableMoves.isEmpty()) {
             return new ArrayList<>(); // Không có nước đi nào hợp lệ, bỏ lượt
         }
 
-        // 4. SẮP XẾP CÁC NƯỚC ĐI ƯU TIÊN BỘ NHIỀU LÁ NHẤT
+        // SẮP XẾP CÁC NƯỚC ĐI ƯU TIÊN BỘ NHIỀU LÁ NHẤT
         // Tiêu chí chính: số lượng lá bài giảm dần (đánh bộ nhiều lá nhất)
         // Tiêu chí phụ: nếu cùng số lượng lá, đánh bộ có lá đại diện nhỏ hơn (yếu hơn)
         allPlayableMoves.sort(
-            Comparator.comparingInt((List<Card> list) -> list.size()).reversed() // Sắp xếp theo size giảm dần
+            Comparator.comparingInt((List<Card> list) -> list.size()).reversed()        // Sắp xếp theo size giảm dần
             .thenComparing(
                 (List<Card> play) -> ruleSet.getRepresentativeCardForCombination(play), // Rồi theo lá đại diện tăng dần
                 ruleSet.getCardComparator()
             )
         );
 
-        return allPlayableMoves.get(0); // Trả về nước đi đầu tiên (nhiều lá nhất, yếu nhất trong số nhiều lá nhất)
+        for(int i = 0; i < allPlayableMoves.size(); i++) {
+        	if(!RemainingCardsValidator.checkRemainingCard(currentHand, allPlayableMoves.get(i))) return allPlayableMoves.get(i);
+        }
+        
+        return new ArrayList<Card>();   // trả về nước đi đầu tiên (nhiều lá nhất, yếu nhất trong số nhiều lá nhất)
     }
 
     // Helper để tìm các tổ hợp chứa một lá bài cụ thể (ví dụ 3 Bích)
@@ -119,7 +118,7 @@ public class SmartStrategy implements TienLenAIStrategy {
             return new ArrayList<>();
         }
 
-        // Ưu tiên Tứ Quý nếu có thể chặt Heo hoặc Tứ Quý khác
+        // ưu tiên Tứ Quý nếu có thể chặt Heo hoặc Tứ Quý khác
         List<List<Card>> playableFours = PlayableMoveGenerator.findPlayableFourOfAKinds(currentHand, lastPlayedCards, ruleSet);
         if (!playableFours.isEmpty()) {
             // Kiểm tra xem có đáng để dùng Tứ Quý không
@@ -127,14 +126,11 @@ public class SmartStrategy implements TienLenAIStrategy {
             Card representativeLastCard = ruleSet.getRepresentativeCardForCombination(lastPlayedCards);
             boolean isLastCardTwo = representativeLastCard != null && representativeLastCard.getRank() == Card.Rank.TWO;
 
-            // Ví dụ: Chặt Heo hoặc Tứ quý khác
-            // Cần một cách chuẩn để xác định loại từ lastPlayedTypeId
-            // Giả sử typeIdentifier trả về enum hoặc string dễ so sánh
             String lastTypeString = lastPlayedTypeId != null ? lastPlayedTypeId.toString().toUpperCase() : "";
 
-            if ((lastTypeString.contains("SINGLE") && isLastCardTwo) || // Chặt Heo đơn
-                (lastTypeString.contains("PAIR") && isLastCardTwo)   || // Chặt Đôi Heo
-                lastTypeString.contains("FOUR_OF_KIND"))              // Chặt Tứ Quý khác
+            if ((lastTypeString.contains("SINGLE") && isLastCardTwo) || // chặt heo đơn
+                (lastTypeString.contains("PAIR") && isLastCardTwo)   || // chặt đôi heo
+                lastTypeString.contains("FOUR_OF_KIND"))                // chặt tứ quý khác
             {
                 // Sắp xếp các tứ quý đánh được và chọn tứ quý nhỏ nhất
                 playableFours.sort(Comparator.comparing(
@@ -144,8 +140,6 @@ public class SmartStrategy implements TienLenAIStrategy {
                 return playableFours.get(0);
             }
         }
-
-        // (Thêm logic cho 3 đôi thông, 4 đôi thông nếu chúng được coi là "chặt" đặc biệt và ưu tiên hơn "nhiều lá nhất")
 
         return new ArrayList<>(); // Không có nước chặt đặc biệt nào được chọn
     }

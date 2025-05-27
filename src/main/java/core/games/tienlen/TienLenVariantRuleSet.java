@@ -2,9 +2,6 @@ package core.games.tienlen;
 
 import java.util.Comparator;
 import java.util.List;
-// Thêm import này nếu bạn quyết định dùng một Enum chung cho CombinationType,
-// hoặc mỗi RuleSet sẽ tự định nghĩa Enum riêng và trả về qua một phương thức trừu tượng hơn.
-// import core.rules.CombinationType; // Ví dụ
 
 import core.Card;
 
@@ -13,8 +10,8 @@ public interface TienLenVariantRuleSet {
 	 enum CombinationType {
 	        SINGLE, PAIR, TRIPLE, STRAIGHT,
 	        FOUR_OF_KIND,
-	        THREE_PAIR_STRAIGHT, // Đôi thông 3
-	        FOUR_PAIR_STRAIGHT,  // Đôi thông 4
+	        THREE_PAIR_STRAIGHT, 
+	        FOUR_PAIR_STRAIGHT, 
 	        INVALID
 	    }
 	
@@ -45,18 +42,10 @@ public interface TienLenVariantRuleSet {
      * @return Lá bài đại diện.
      */
     Card getRepresentativeCardForCombination(List<Card> combination);
-
-    // Các phương thức liên quan đến luật chơi đặc biệt của lượt đầu tiên (nếu muốn trừu tượng hóa)
-    // Ví dụ:
-    // boolean mustPlaySpecificCardsOnFirstTurn(List<Card> hand);
-    // List<Card> getRequiredCardsForFirstGameTurn(List<Card> hand);
-    // boolean isValidPlayForFirstGameTurn(List<Card> play, List<Card> hand);
     
-    int getCardRankValue(Card card); // Trả về giá trị số để so sánh rank
+    int getCardRankValue(Card card); 
     int getTwoRankValue();  
-    
     boolean hasStartingCard(List<Card> cards);
-    
     int getCardsPerPlayer();
-    
+    Card startingCard();
 }

@@ -2,10 +2,9 @@ package core.games.tienlen.components;
 
 import core.Card;
 import core.ai.tienlenai.TienLenAI;
-import core.games.tienlen.TienLenGameContext; // Sử dụng TienLenGameContext
+import core.games.tienlen.TienLenGameContext;
 import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
-// import core.games.tienlen.TienLenVariantRuleSet; // Có thể không cần nếu RuleSet trong context đã đủ
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -27,16 +26,16 @@ public class TurnProcessor {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 gameContext.notifyMessage(currentPlayer.getName() + " (AI) bị gián đoạn khi suy nghĩ.");
-                return null; // Trả về null (hoặc rỗng) để coi như bỏ lượt
+                return null;
             }
             TienLenAI aiPlayer = (TienLenAI) currentPlayer;
 
             chosenCards = aiPlayer.chooseCards(
-                gameContext.getLastPlayedCards(),   // Bài đã đánh trên bàn
-                gameContext.isFirstTurnOfGame()     // Cờ báo lượt đầu tiên của toàn game
+                gameContext.getLastPlayedCards(),
+                gameContext.isFirstTurnOfGame()
             );
 
-        } else { // Người chơi thường
+        } else {
             chosenCards = gameContext.getHumanInputSynchronously();
             gameContext.clearHumanInput();
         }

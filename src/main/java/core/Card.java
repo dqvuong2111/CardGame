@@ -2,15 +2,15 @@ package core;
 
 public class Card implements Comparable<Card> {
 	public enum Suit {
-		CLUBS,    // Tép (nhỏ nhất)
-        DIAMONDS, // Rô
-        HEARTS,   // Cơ
-        SPADES    // Bích (lớn nhất)
+		CLUBS,    
+        DIAMONDS, 
+        HEARTS,   
+        SPADES    
 	}
 	
 	public enum Rank {
-		THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8),
-        NINE(9), TEN(10), JACK(11), QUEEN(12), KING(13), ACE(14), TWO(2); 
+		TWO(2), THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8),
+        NINE(9), TEN(10), JACK(11), QUEEN(12), KING(13), ACE(14); 
 	
 		private final int value;
 		Rank(int value){
@@ -90,13 +90,9 @@ public class Card implements Comparable<Card> {
 
 	 @Override
 	    public int compareTo(Card other) {
-	        // So sánh mặc định (dùng cho Player.sortHand nếu không có RuleSet cụ thể)
-	        // Thông thường: Giá trị trước, sau đó chất
 	        if (this.rank.getValue() != other.rank.getValue()) {
 	            return Integer.compare(this.rank.getValue(), other.rank.getValue());
 	        } else {
-	            // Thứ tự chất mặc định (tùy game có thể thay đổi)
-	            // Ví dụ: Spades > Hearts > Diamonds > Clubs
 	            return Integer.compare(this.suit.ordinal(), other.suit.ordinal()); 
 	        }
 	    }

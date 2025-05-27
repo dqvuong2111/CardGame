@@ -1,6 +1,7 @@
 // File: ui/JavaFX/Scenes/PlayerCustomizationSceneView.java
 package ui.JavaFX.Scenes;
 
+import core.ai.tienlenai.TienLenAI; // Giả sử bạn có enum này ở đây
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -27,7 +28,6 @@ public class PlayerCustomizationSceneView {
     private Label currentAIPlayersDisplay;
     private Label currentAIStrategyDisplay;
     private Label currentGameVariantDisplay;
-    private Label currentGraphicDisplay;
 
     public PlayerCustomizationSceneView(SceneManager sceneManager) {
         this.sceneManager = sceneManager;
@@ -142,18 +142,6 @@ public class PlayerCustomizationSceneView {
         settingsGrid.add(currentGameVariantDisplay, 1, 3);
         settingsGrid.add(changeGameVariantButton, 2, 3);
 
-        // 5. Loại graphic
-        Label graphicTitleLabel = new Label("Loại graphic:");
-        styleSettingsLabel(graphicTitleLabel);
-        currentGraphicDisplay = new Label(); // Khởi tạo rỗng
-        styleValueDisplayLabel(currentGraphicDisplay);
-        Button changeGraphicButton = new Button("Thay đổi");
-        styleMiniButton(changeGraphicButton);
-        changeGraphicButton.setOnAction(e -> sceneManager.showSelectGraphicScene(currentGraphicDisplay));
-        settingsGrid.add(graphicTitleLabel, 0, 4);
-        settingsGrid.add(currentGraphicDisplay, 1, 4);
-        settingsGrid.add(changeGraphicButton, 2, 4);
-
         HBox bottomButtonBar = new HBox(25); // Tăng khoảng cách nút
         bottomButtonBar.setAlignment(Pos.CENTER);
         VBox.setMargin(bottomButtonBar, new Insets(35, 0, 10, 0)); // Tăng margin trên, giảm margin dưới
@@ -176,8 +164,7 @@ public class PlayerCustomizationSceneView {
             currentHumanPlayersDisplay,
             currentAIPlayersDisplay,
             currentAIStrategyDisplay,
-            currentGameVariantDisplay,
-            currentGraphicDisplay
+            currentGameVariantDisplay 
         );
         // SceneManager.updateDisplayedValuesOnCustomizationScene() sẽ được gọi
         // bên trong setPlayerCustomizationLabels để điền giá trị ban đầu.

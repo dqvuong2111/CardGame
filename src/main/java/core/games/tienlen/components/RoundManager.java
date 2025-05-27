@@ -6,10 +6,7 @@ import core.games.tienlen.TienLenGameContext;
 import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RoundManager {
     private final TienLenGameContext gameContext;
@@ -33,32 +30,23 @@ public class RoundManager {
     public void processPassedTurn(TienLenPlayer currentPlayer) {
         gameContext.notifyPlayerPassed(currentPlayer);
         gameContext.incrementPassCount();
-        // playerWhoPlayedLastValidCards không đổi
     }
 
     public boolean manageRoundEndAndNewRound() {
         long activePlayersCount = gameContext.getPlayers().stream().filter(p -> !p.hasNoCards()).count();
         TienLenPlayer lastValidPlayer = gameContext.getPlayerWhoPlayedLastValidCards();
 
-        if (lastValidPlayer != null && gameContext.getPassCount() >= (activePlayersCount - 1) && activePlayersCount > 0) {
-            // Nếu tất cả người chơi còn lại (trừ người đánh hợp lệ cuối cùng) đã bỏ lượt
+        if (lastValidPlayer != null && gameContext.getPassCount() >= (lastValidPlayer.hasNoCards() ? activePlayersCount : activePlayersCount - 1) && activePlayersCount > 0) {
             TienLenPlayer roundStarter = lastValidPlayer;
-            if (roundStarter.hasNoCards()) { // Người thắng vòng đã hết bài
-                // Cần tìm người kế tiếp để bắt đầu vòng mới
-                // Logic này sẽ được xử lý bởi việc chọn next player sau đó
-                // Tạm thời, nếu người thắng vòng hết bài, người kế tiếp theo vòng sẽ bắt đầu
-                // Điều này cần được làm rõ hơn trong logic chuyển người chơi
-                // For now, we assume next player logic will handle this.
-                // The round starter should be an active player.
-                // This indicates the round ends, and the next turn will be a new round.
-                gameContext.notifyMessage("Vòng chơi kết thúc!"); // Thông báo chung
+            if (roundStarter.hasNoCards()) {
+                gameContext.notifyMessage("Vòng chơi kết thúc!");
                 startNewRoundForNextAvailablePlayer(roundStarter);
             } else {
                 startNewRound(roundStarter);
             }
-            return true; // Vòng mới đã bắt đầu
+            return true;
         }
-        return false; // Vòng hiện tại vẫn tiếp tục hoặc không có điều kiện bắt đầu vòng mới rõ ràng
+        return false;
     }
     
     private void startNewRoundForNextAvailablePlayer(TienLenPlayer previousRoundWinner) {
@@ -73,29 +61,27 @@ public class RoundManager {
         if(!players.get(nextPlayerIndex).hasNoCards()){
             startNewRound(players.get(nextPlayerIndex));
         } else {
-            // Không còn ai để chơi, game nên kết thúc (logic này sẽ do checkGameOver xử lý)
             gameContext.notifyMessage("Không còn người chơi nào để bắt đầu vòng mới.");
         }
     }
 
 
     public void startNewRound(TienLenPlayer roundStarter) {
-        if (roundStarter == null || roundStarter.hasNoCards()) return; // Không thể bắt đầu nếu người đó đã hết bài
+        if (roundStarter == null || roundStarter.hasNoCards()) return;
 
         gameContext.notifyMessage("Vòng mới! " + roundStarter.getName() + " sẽ đi trước.");
         gameContext.setCurrentPlayerByIndex(gameContext.getPlayers().indexOf(roundStarter));
-        // gameContext.setRoundStarterIndex(gameContext.getCurrentPlayerIndex()); // Nếu có biến này
-        gameContext.setLastPlayedCards(new ArrayList<>()); // Xóa bài trên bàn
+        gameContext.setLastPlayedCards(new ArrayList<>());
         gameContext.setLastPlayer(null);
         gameContext.resetPassCount();
-        gameContext.setPlayerWhoPlayedLastValidCards(roundStarter); // Người bắt đầu vòng cũng là người đánh hợp lệ đầu tiên
-        gameContext.setFirstTurnOfGame(false); // Chắc chắn không phải lượt đầu game nữa
+        gameContext.setPlayerWhoPlayedLastValidCards(roundStarter);
+        gameContext.setFirstTurnOfGame(false);
         gameContext.notifyRoundStarted(roundStarter);
     }
 
     public void handlePlayerFinish(TienLenPlayer finishedPlayer) {
-        if (!gameContext.getWinners().contains(finishedPlayer)) { // Tránh thêm nhiều lần
-            finishedPlayer.setHasNoCards(true); // Đánh dấu người chơi đã hết bài
+        if (!gameContext.getWinners().contains(finishedPlayer)) {
+            finishedPlayer.setHasNoCards(true);
             gameContext.addWinner(finishedPlayer, gameContext.getCurrentWinnerRank());
             gameContext.notifyPlayerEliminated(finishedPlayer);
         }
@@ -111,14 +97,13 @@ public class RoundManager {
                 break;
             }
         }
-        if (starterIdx == -1) { // Không tìm thấy 3 bích (nên có cho ván đầu)
-            starterIdx = 0; // Người đầu tiên trong danh sách đi trước
+        if (starterIdx == -1) {
+            starterIdx = 0;
             gameContext.notifyMessage("Không tìm thấy 3 Bích. " + players.get(starterIdx).getName() + " sẽ đi đầu.");
         } else {
             gameContext.notifyMessage(players.get(starterIdx).getName() + " có 3 Bích. Họ sẽ đi đầu!");
         }
         gameContext.setCurrentPlayerByIndex(starterIdx);
-        // gameContext.setRoundStarterIndex(starterIdx); // Nếu bạn có biến này
-        gameContext.setPlayerWhoPlayedLastValidCards(players.get(starterIdx)); // Người đi đầu cũng là người "đánh hợp lệ" đầu tiên của vòng
+        gameContext.setPlayerWhoPlayedLastValidCards(players.get(starterIdx));
     }
 }

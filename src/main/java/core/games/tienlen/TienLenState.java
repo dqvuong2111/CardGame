@@ -14,7 +14,7 @@ public class TienLenState {
     private List<TienLenPlayer> winners;
     private int currentWinnerRank;
     private TienLenPlayer playerWhoPlayedLastValidCards;
-    private TienLenGameState currentTienLenGameState; // Sử dụng enum top-level
+    private TienLenGameState currentTienLenGameState;
 
     public TienLenState() {
         this.lastPlayedCards = new ArrayList<>();
@@ -79,7 +79,7 @@ public class TienLenState {
         this.lastPlayer = null;
         this.passCount = 0;
         this.playerWhoPlayedLastValidCards = roundStarter;
-        this.isFirstTurnOfGame = false; // Vòng mới không phải là lượt đầu game nữa
+        this.isFirstTurnOfGame = false;
         this.currentTienLenGameState = TienLenGameState.ROUND_IN_PROGRESS;
     }
 }

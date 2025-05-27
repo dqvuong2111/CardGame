@@ -9,6 +9,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.util.List;
+import java.util.ArrayList;
 
 public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameEventListener {
     protected T game;

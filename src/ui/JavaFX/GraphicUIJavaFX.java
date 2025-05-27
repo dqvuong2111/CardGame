@@ -10,12 +10,18 @@ import core.games.tienlen.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label; // Giữ lại nếu dùng cho addDefaultTextEffect
+import javafx.scene.effect.DropShadow; // Giữ lại nếu dùng cho addDefaultTextEffect
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color; // Giữ lại nếu dùng cho addDefaultTextEffect
+import javafx.scene.text.Font; // Giữ lại nếu dùng cho addDefaultTextEffect
+import javafx.scene.text.FontWeight; // Giữ lại nếu dùng cho addDefaultTextEffect
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -29,6 +35,7 @@ import ui.JavaFX.gamescreencomponents.PlayersListComponent;
 import ui.JavaFX.gamescreencomponents.TableCardsComponent;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -186,6 +193,13 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<AbstractTienLenGame<? ext
             }
         }
         return null;
+    }
+    
+    private void addDefaultTextEffect(Label label) {
+        DropShadow ds = new DropShadow();
+        ds.setRadius(2); ds.setOffsetX(1.0); ds.setOffsetY(1.0);
+        ds.setColor(Color.rgb(0, 0, 0, 0.7));
+        label.setEffect(ds);
     }
 
     @Override
@@ -378,6 +392,9 @@ public class GraphicUIJavaFX extends CardGameGUIJavaFX<AbstractTienLenGame<? ext
         });
     }
     
+  
+    
+
     private void handleNewGameButton(ActionEvent event) {
     if (game != null) {
         selectedCards.clear(); 

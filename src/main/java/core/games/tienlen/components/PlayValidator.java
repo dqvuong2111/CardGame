@@ -2,9 +2,7 @@ package core.games.tienlen.components;
 
 import core.Card;
 import core.games.tienlen.TienLenGameContext;
-import core.games.tienlen.TienLenVariantRuleSet; // <<--- SỬ DỤNG INTERFACE NÀY
-import core.games.tienlen.tienlenmiennam.TienLenMienNamRule;
-// import core.games.tienlen.TienLenMienNamRule; // Không cần import trực tiếp TienLenMienNamRule nữa trừ khi có lý do đặc biệt
+import core.games.tienlen.TienLenVariantRuleSet;
 import core.games.tienlen.tienlenplayer.TienLenPlayer;
 
 import java.util.ArrayList;
@@ -12,11 +10,11 @@ import java.util.List;
 
 public class PlayValidator {
     private final TienLenGameContext gameContext;
-    private final TienLenVariantRuleSet ruleSet; // <<--- LƯU TRỮ DƯỚI DẠNG INTERFACE
+    private final TienLenVariantRuleSet ruleSet;
 
     public PlayValidator(TienLenGameContext gameContext) {
         this.gameContext = gameContext;
-        this.ruleSet = gameContext.getRuleSet(); // <<--- GÁN TRỰC TIẾP, KHÔNG CẦN ÉP KIỂU
+        this.ruleSet = gameContext.getRuleSet();
     }
 
     public boolean isValidPlayForCurrentContext(List<Card> cardsToPlay, TienLenPlayer currentPlayer) {
@@ -24,12 +22,7 @@ public class PlayValidator {
             return false;
         }
 
-        // Sử dụng this.ruleSet (là TienLenVariantRuleSet)
         if (gameContext.isFirstTurnOfGame()) {
-            // Logic kiểm tra 3 Bích có thể cần truy cập các hằng số/phương thức cụ thể.
-            // Nếu TienLenVariantRuleSet không có phương thức để kiểm tra "lá bài bắt đầu",
-            // bạn có thể cần kiểm tra kiểu và ép kiểu một cách cẩn thận, hoặc thêm phương thức đó vào interface.
-            // Giả sử hasStartingCard là một phần của TienLenVariantRuleSet (kế thừa từ RuleSet)
             if (!ruleSet.hasStartingCard(cardsToPlay)) {
                 gameContext.notifyMessage("Lượt đầu tiên phải đánh bài có 3 Bích!");
                 return false;
@@ -54,13 +47,12 @@ public class PlayValidator {
         }
         
      // --- LOGIC NGĂN CHẶN "THỐI 2" (KHÔNG ĐỂ LẠI TOÀN 2 TRÊN TAY MÀ KHÔNG ĐÁNH ĐƯỢC) ---
-        List<Card> handAfterPlay = new ArrayList<>(currentPlayer.getHand()); // Tạo bản sao tay bài hiện tại
-        handAfterPlay.removeAll(cardsToPlay); // Loại bỏ những lá định đánh
+        List<Card> handAfterPlay = new ArrayList<>(currentPlayer.getHand());
+        handAfterPlay.removeAll(cardsToPlay);
 
-        if (!handAfterPlay.isEmpty()) { // Nếu sau khi đánh, người chơi vẫn còn bài
+        if (!handAfterPlay.isEmpty()) {
             boolean remainingCardsAreAllTwos = true;
             for (Card card : handAfterPlay) {
-                // Sử dụng TienLenMienNamRule.getTienLenValue(card) == 15 để kiểm tra quân 2
             	if (ruleSet.getCardRankValue(card) != ruleSet.getTwoRankValue()) {
                     remainingCardsAreAllTwos = false;
                     break;
@@ -68,29 +60,22 @@ public class PlayValidator {
             }
 
             if (remainingCardsAreAllTwos) {
-                // Đây là luật "không được đánh (ra) toàn 2 để thắng":
             	return false;
-            } // Kết thúc if (remainingCardsAreAllTwos)
-        } // Kết thúc if (!handAfterPlay.isEmpty())
+            }
+        } 
         
         return true;
     
     }
 
     public boolean canPlayerPass(TienLenPlayer currentPlayer) {
-        // Sử dụng this.ruleSet
         if (gameContext.getLastPlayedCards().isEmpty()) {
-            // Kiểm tra 3 Bích cho lượt đầu game
             if (gameContext.isFirstTurnOfGame() && ruleSet.hasStartingCard(currentPlayer.getHand())) {
-                // Nếu RuleSet có phương thức kiểm tra lá bài bắt buộc, dùng nó ở đây.
-                // Giả sử hasStartingCard là một phần của RuleSet mà TienLenVariantRuleSet kế thừa
-                // và nó được hiểu là "có lá bài bắt buộc phải đánh".
-                // Tuy nhiên, logic canPlayerPass này đã xử lý đúng cho Human.
                 if (!currentPlayer.isAI()) {
                     gameContext.notifyMessage("Bạn phải đánh 3 Bích trong lượt đầu tiên của game!");
                     return false;
                 }
-            } else if (!gameContext.isFirstTurnOfGame()) { // Mở đầu vòng mới (không phải lượt đầu game)
+            } else if (!gameContext.isFirstTurnOfGame()) {
                 if (!currentPlayer.isAI()) {
                     gameContext.notifyMessage("Bạn không thể bỏ lượt khi là người đi đầu vòng mới!");
                     return false;

@@ -1,4 +1,4 @@
-package core.games.tienlen.tienlenmienbac; // Hoặc package của bạn
+package core.games.tienlen.tienlenmienbac; 
 
 import core.Card;
 import core.Deck;
@@ -9,12 +9,12 @@ import java.util.List;
 public class TienLenMienBacGame extends AbstractTienLenGame<TienLenMienBacRule> {
 
     public TienLenMienBacGame(List<TienLenPlayer> players, TienLenMienBacRule ruleSet) {
-        super("Tiến Lên Miền Bắc", players, new Deck(), ruleSet, 1L); // aiDelay là 1 giây
+        super("Tiến Lên Miền Bắc", players, new Deck(), ruleSet, 1L); 
     }
 
     @Override
     protected void findStartingPlayerOfGameVariant() {
-        // Logic tìm người có 3 Bích (giống TLMN hoặc có thể có biến thể nhỏ)
+        // Logic tìm người có 3 Bích
         List<TienLenPlayer> currentPlayers = getPlayers();
         Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE);
         int starterIdx = -1;
@@ -33,6 +33,4 @@ public class TienLenMienBacGame extends AbstractTienLenGame<TienLenMienBacRule> 
         setCurrentPlayerByIndex(starterIdx);
         setPlayerWhoPlayedLastValidCards(currentPlayers.get(starterIdx));
     }
-
-    // Bạn có thể override các phương thức khác từ AbstractTienLenGame nếu TLMB có logic vòng đời game khác biệt.
 }
