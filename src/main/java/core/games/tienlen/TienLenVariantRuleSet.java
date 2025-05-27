@@ -55,4 +55,8 @@ public interface TienLenVariantRuleSet {
     int getCardRankValue(Card card); // Trả về giá trị số để so sánh rank
     int getTwoRankValue();  
     
+    boolean hasStartingCard(List<Card> cards);
+    
+    int getCardsPerPlayer();
+    
 }

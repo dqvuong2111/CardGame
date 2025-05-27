@@ -1,222 +1,367 @@
-// ui/JavaFX/SceneManager.java
+// File: ui/JavaFX/SceneManager.java
 package ui.JavaFX;
 
-import core.AIPlayer;
 import core.Game;
-import core.Player;
-import core.rules.TienLenGame;
-import core.rules.TienLenRule;
+// ... (các import khác của bạn) ...
+import core.ai.tienlenai.TienLenAI;
+import core.ai.tienlenai.TienLenAIStrategy;
+import core.games.tienlen.AbstractTienLenGame;
+import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.tienlen.samloc.SamLocRule;
+import core.games.tienlen.samloc.SamLocGame;
+import core.games.tienlen.tienlenmienbac.TienLenMienBacGame;
+import core.games.tienlen.tienlenmienbac.TienLenMienBacRule;
+import core.games.tienlen.tienlenmiennam.TienLenMienNamGame;
+import core.games.tienlen.tienlenmiennam.TienLenMienNamRule;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.ChoiceBox; // THÊM: Import ChoiceBox
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
+import javafx.scene.control.Label; // Cần cho việc truyền label vào scene con
+import javafx.stage.Screen;
 import javafx.stage.Stage;
+import ui.JavaFX.Scenes.MainMenuSceneView;
+import ui.JavaFX.Scenes.PlayerCustomizationSceneView;
+import ui.JavaFX.Scenes.SelectAIStrategySceneView;
+import ui.JavaFX.Scenes.SelectGameVariantSceneView;
+import ui.JavaFX.Scenes.SelectNumberOfHumansSceneView;
+
+// Import các lớp Scene View mới
+
+
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional; // THÊM: Import Optional
 
 public class SceneManager {
     private Stage primaryStage;
     private GraphicUIJavaFX gameGUI;
-    private TienLenGame currentGame;
+    private AbstractTienLenGame<?> currentGame;
 
-    // Cài đặt game mặc định
-    private int numberOfPlayers = 4; // Mặc định 4 người chơi
-    private int numberOfAIPlayers = 3; // Mặc định 3 AI, 1 người (tổng 4 người)
-    private AIPlayer.AIStrategy aiStrategy = AIPlayer.AIStrategy.SMART; // Mặc định chiến lược SMART
+    public enum GameVariant {
+        SAM_LOC("Sâm Lốc"),
+        TIEN_LEN_MIEN_NAM("Tiến Lên Miền Nam"),
+        TIEN_LEN_MIEN_BAC("Tiến Lên Miền Bắc");
+        private final String displayName;
+        GameVariant(String displayName) { this.displayName = displayName; }
+        @Override public String toString() { return displayName; }
+    }
 
-    // Khai báo các biến UI là thành viên của lớp
-    private Label numPlayersLabel;
-    private Slider numPlayersSlider;
-    private Label numAIsLabel;
-    private Slider numAIsSlider;
-    private ChoiceBox<AIPlayer.AIStrategy> aiStrategyChoiceBox; // Thêm ChoiceBox
-    
+    public static final int FIXED_TOTAL_PLAYERS = 4; // Giữ lại là public static final
+    private int numberOfHumanPlayers = 1;
+    private int numberOfAIPlayers = FIXED_TOTAL_PLAYERS - numberOfHumanPlayers;
+    private GameVariant selectedGameVariant = GameVariant.SAM_LOC;
+    private TienLenAI.StrategyType aiStrategy = TienLenAI.StrategyType.SMART;
+    private boolean requiredThreeSpades = true;
+
+    // Các label trên màn hình PlayerCustomization mà các scene con cần cập nhật
+    private Label currentHumanPlayersDisplayLabel; // Từ PlayerCustomizationSceneView
+    private Label currentAIPlayersDisplayLabel;    // Từ PlayerCustomizationSceneView
+    private Label currentAIStrategyDisplayLabel;   // Từ PlayerCustomizationSceneView
+    private Label currentGameVariantDisplayLabel;
+
+
     public SceneManager(Stage primaryStage) {
         this.primaryStage = primaryStage;
-        this.primaryStage.setTitle("Tiến Lên Miền Nam");
-        this.primaryStage.setMaximized(true);
-        showMainMenu();
+        this.primaryStage.setTitle("Tiến Lên"); // Tiêu đề chung ban đầu
+        this.primaryStage.sceneProperty().addListener((obs, oldScene, newScene) -> {
+	        if (newScene != null) {
+	            System.out.println("Listener: Scene đã thay đổi. Gọi forceMaximize().");
+	            Platform.runLater(this::forceMaximize);
+	        }
+	    });
+        forceMaximize();
+        showMainMenu(); // Bắt đầu với Main Menu
     }
 
     public void showMainMenu() {
-        VBox menuLayout = new VBox(20); // Khoảng cách giữa các phần tử là 20
-        menuLayout.setAlignment(Pos.CENTER);
-        menuLayout.setPadding(new Insets(50));
-        menuLayout.setStyle("-fx-background-color: #2c3e50;"); // Màu nền tối
-
-        Label titleLabel = new Label("TIẾN LÊN MIỀN NAM");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 48));
-        titleLabel.setTextFill(javafx.scene.paint.Color.web("#ecf0f1")); // Màu chữ sáng
-
-        // --- Cài đặt số lượng người chơi (bao gồm cả người chơi và AI) ---
-        Label numPlayersLabel = new Label("Số lượng người chơi (bao gồm bạn): " + numberOfPlayers);
-        numPlayersLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-        numPlayersLabel.setTextFill(javafx.scene.paint.Color.web("#ecf0f1"));
-
-        Slider numPlayersSlider = new Slider(2, 4, numberOfPlayers); // Min 2, Max 4, Giá trị ban đầu 4
-        numPlayersSlider.setBlockIncrement(1);
-        numPlayersSlider.setMajorTickUnit(1);
-        numPlayersSlider.setMinorTickCount(0);
-        numPlayersSlider.setShowTickLabels(true);
-        numPlayersSlider.setShowTickMarks(true);
-        numPlayersSlider.setSnapToTicks(true);
-        numPlayersSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            numberOfPlayers = newVal.intValue();
-            // Đảm bảo số lượng AI không vượt quá tổng số người chơi - 1 (vì có 1 người chơi)
-            if (numberOfAIPlayers > numberOfPlayers - 1) {
-                numberOfAIPlayers = numberOfPlayers - 1;
-            }
-            numPlayersLabel.setText("Số lượng người chơi (bao gồm bạn): " + numberOfPlayers);
-            // Cập nhật nhãn số lượng AI
-            numAIsLabel.setText("Số lượng AI: " + numberOfAIPlayers);
-            numAIsSlider.setMax(numberOfPlayers - 1); // Cập nhật max của slider AI
-        });
-
-
-        // --- Cài đặt số lượng AI (tối đa bằng số lượng người chơi - 1) ---
-        Label numAIsLabel = new Label("Số lượng AI: " + numberOfAIPlayers);
-        numAIsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-        numAIsLabel.setTextFill(javafx.scene.paint.Color.web("#ecf0f1"));
-
-        Slider numAIsSlider = new Slider(1, numberOfPlayers - 1, numberOfAIPlayers); // Min 1 AI (ít nhất 1 người chơi với AI)
-        numAIsSlider.setBlockIncrement(1);
-        numAIsSlider.setMajorTickUnit(1);
-        numAIsSlider.setMinorTickCount(0);
-        numAIsSlider.setShowTickLabels(true);
-        numAIsSlider.setShowTickMarks(true);
-        numAIsSlider.setSnapToTicks(true);
-        numAIsSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            numberOfAIPlayers = newVal.intValue();
-            numAIsLabel.setText("Số lượng AI: " + numberOfAIPlayers);
-        });
-
-        // Đảm bảo Slider của AI không vượt quá giới hạn khi numberOfPlayers thay đổi
-        numPlayersSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            numberOfPlayers = newVal.intValue();
-            numPlayersLabel.setText("Số lượng người chơi (bao gồm bạn): " + numberOfPlayers);
-            // Đảm bảo số lượng AI không vượt quá tổng số người chơi - 1 (vì có 1 người chơi)
-            if (numberOfAIPlayers > numberOfPlayers - 1) {
-                numberOfAIPlayers = numberOfPlayers - 1;
-            }
-            numAIsSlider.setMax(numberOfPlayers - 1);
-            numAIsSlider.setValue(numberOfAIPlayers); // Cập nhật giá trị slider AI
-            numAIsLabel.setText("Số lượng AI: " + numberOfAIPlayers);
-        });
-
-
-        // --- Chọn chiến lược AI ---
-        Label aiStrategyLabel = new Label("Chiến lược AI:");
-        aiStrategyLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-        aiStrategyLabel.setTextFill(javafx.scene.paint.Color.web("#ecf0f1"));
-
-        ChoiceBox<AIPlayer.AIStrategy> aiStrategyChoiceBox = new ChoiceBox<>();
-        aiStrategyChoiceBox.getItems().addAll(AIPlayer.AIStrategy.SMART, AIPlayer.AIStrategy.GREEDY, AIPlayer.AIStrategy.RANDOM);
-        aiStrategyChoiceBox.setValue(aiStrategy); // Giá trị mặc định
-        aiStrategyChoiceBox.setOnAction(e -> aiStrategy = aiStrategyChoiceBox.getValue());
-
-
-        // --- Nút Bắt đầu game ---
-        Button startGameButton = createMenuButton("Bắt đầu Game");
-        startGameButton.setOnAction(e -> startGame());
-
-        // --- Nút Thoát ---
-        Button exitButton = createMenuButton("Thoát");
-        exitButton.setOnAction(e -> {
-            Platform.exit();
-            System.exit(0);
-        });
-
-        menuLayout.getChildren().addAll(
-                titleLabel,
-                numPlayersLabel,
-                numPlayersSlider,
-                numAIsLabel,
-                numAIsSlider,
-                aiStrategyLabel,
-                aiStrategyChoiceBox,
-                startGameButton,
-                exitButton
-        );
-
-        Scene menuScene = new Scene(menuLayout);
-        primaryStage.setScene(menuScene);
+        MainMenuSceneView mainMenu = new MainMenuSceneView(this);
+        Parent root = mainMenu.createContent();
+        Scene scene = new Scene(root);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Tiến Lên - Menu Chính");
         primaryStage.setMaximized(true);
+        primaryStage.show(); // Đảm bảo show nếu là lần đầu
+    }
+
+    // Phương thức để PlayerCustomizationSceneView đăng ký các label của nó
+    public void setPlayerCustomizationLabels(Label humanLabel, Label aiLabel, Label strategyLabel, Label variantLabel) {
+        this.currentHumanPlayersDisplayLabel = humanLabel;
+        this.currentAIPlayersDisplayLabel = aiLabel;
+        this.currentAIStrategyDisplayLabel = strategyLabel;
+        this.currentGameVariantDisplayLabel = variantLabel; // LƯU LẠI LABEL LOẠI GAME
+        updateDisplayedValuesOnCustomizationScene(); // Cập nhật tất cả các label lần đầu
+    }
+    
+    
+
+
+    public void showPlayerCustomizationScene() {
+        PlayerCustomizationSceneView customizationView = new PlayerCustomizationSceneView(this);
+        Parent root = customizationView.createContent();
+        Scene scene = new Scene(root);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Tiến Lên - Tùy Chỉnh Ván Chơi");
+        // forceMaximize();
+        // updateDisplayedValuesOnCustomizationScene(); // Được gọi bên trong createContent hoặc qua setPlayerCustomizationLabels
+    }
+    
+    // Các scene con sẽ gọi các setter này, sau đó gọi lại updateDisplayedValues...
+    public void setNumberOfHumanPlayers(int num) {
+        this.numberOfHumanPlayers = num;
+        this.numberOfAIPlayers = FIXED_TOTAL_PLAYERS - this.numberOfHumanPlayers;
+        if (this.numberOfAIPlayers < 0) this.numberOfAIPlayers = 0;
+        updateDisplayedValuesOnCustomizationScene();
+    }
+
+    public void setAiStrategy(TienLenAI.StrategyType strategy) {
+        this.aiStrategy = strategy;
+        updateDisplayedValuesOnCustomizationScene();
+    }
+    
+    public void setSelectedGameVariant(GameVariant variant) {
+        this.selectedGameVariant = variant;
+        updateDisplayedValuesOnCustomizationScene(); // Đảm bảo label này cũng được cập nhật nếu nó là một phần của các label được quản lý tập trung
+    }
+
+    // Getter cho các giá trị cấu hình để SceneView có thể khởi tạo UI đúng
+    public int getNumberOfHumanPlayers() { return numberOfHumanPlayers; }
+    public int getNumberOfAIPlayers() { return numberOfAIPlayers; } // Tính toán lại nếu cần
+    public TienLenAI.StrategyType getAiStrategy() { return aiStrategy; }
+    public GameVariant getSelectedGameVariant() { return selectedGameVariant; }
+
+
+    // Cập nhật các label trên màn hình PlayerCustomization
+    // Được gọi sau khi các giá trị thay đổi hoặc khi scene được hiển thị
+    private void updateDisplayedValuesOnCustomizationScene() {
+        if (currentHumanPlayersDisplayLabel != null) {
+            currentHumanPlayersDisplayLabel.setText(String.valueOf(this.numberOfHumanPlayers));
+        }
+        if (currentAIPlayersDisplayLabel != null) {
+            int calculatedAIs = FIXED_TOTAL_PLAYERS - this.numberOfHumanPlayers;
+            if (calculatedAIs < 0) calculatedAIs = 0;
+            currentAIPlayersDisplayLabel.setText(String.valueOf(calculatedAIs));
+        }
+        if (currentAIStrategyDisplayLabel != null) {
+            currentAIStrategyDisplayLabel.setText(this.aiStrategy.toString());
+        }
+        // CẬP NHẬT CHO LABEL LOẠI GAME
+        if (currentGameVariantDisplayLabel != null) {
+            currentGameVariantDisplayLabel.setText(this.selectedGameVariant.toString());
+        }
+    }
+
+    public void showSelectGameVariantScene(Label gameVariantDisplayLabel) {
+        // gameVariantDisplayLabel là Label từ PlayerCustomizationSceneView
+        // để SelectGameVariantSceneView có thể cập nhật nó.
+        SelectGameVariantSceneView selectVariantView = new SelectGameVariantSceneView(this, gameVariantDisplayLabel);
+        Parent root = selectVariantView.createContent();
+        Scene scene = new Scene(root);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Chọn Chế Độ Chơi");
+        // Platform.runLater(this::forceMaximize); // Gọi nếu cần và không dùng listener
+    }
+    
+    public void showSelectNumberOfHumansScene(Label humanDisplayLabel, Label aiDisplayLabel) {
+        // Truyền các Label từ PlayerCustomizationSceneView vào đây để scene con có thể cập nhật chúng
+        SelectNumberOfHumansSceneView selectHumansView = new SelectNumberOfHumansSceneView(this, humanDisplayLabel, aiDisplayLabel);
+        Parent root = selectHumansView.createContent();
+        Scene scene = new Scene(root);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Chọn Số Người Chơi Thật");
+        // forceMaximize();
+    }
+
+    public void showSelectAIStrategyScene(Label strategyDisplayLabel) {
+        // Truyền Label từ PlayerCustomizationSceneView
+        SelectAIStrategySceneView selectAIStrategyView = new SelectAIStrategySceneView(this, strategyDisplayLabel);
+        Parent root = selectAIStrategyView.createContent();
+        Scene scene = new Scene(root);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Chọn Chiến Lược AI");
+        // forceMaximize();
+    }
+
+
+    public void startGame() {
+        stopCurrentGame(); 
+
+        System.out.println("Bắt đầu startGame():");
+        System.out.println("  - Loại game: " + selectedGameVariant);
+        System.out.println("  - Người thật: " + numberOfHumanPlayers);
+        System.out.println("  - Chiến lược AI: " + aiStrategy);
         
-    }
+        // Tính toán lại số AI một cách chắc chắn
+        this.numberOfAIPlayers = FIXED_TOTAL_PLAYERS - this.numberOfHumanPlayers;
+        if (this.numberOfAIPlayers < 0) this.numberOfAIPlayers = 0;
+        System.out.println("  - AI Players (đã tính): " + this.numberOfAIPlayers);
 
-    private void startGame() {
-        // Dừng game hiện tại nếu có
-        stopCurrentGame();
-
-        TienLenRule tienLenRule = new TienLenRule();
-        List<Player> players = new ArrayList<>();
-
-        // Thêm người chơi là con người
-        players.add(new Player("Người chơi 1", false));
-
-        // Thêm AI Players dựa trên lựa chọn
-        for (int i = 0; i < numberOfAIPlayers; i++) {
-            players.add(new AIPlayer("AI " + (i + 2), aiStrategy, tienLenRule)); // AI 2, AI 3, ...
+        List<TienLenPlayer> players = new ArrayList<>();
+        for (int i = 0; i < this.numberOfHumanPlayers; i++) {
+            players.add(new TienLenPlayer("Người " + (i + 1), false));
         }
 
-        // Nếu tổng số người chơi ít hơn numberOfPlayers, thêm người chơi AI cho đủ
-        while (players.size() < numberOfPlayers) {
-            players.add(new AIPlayer("AI " + (players.size() + 1), aiStrategy, tienLenRule));
+        TienLenVariantRuleSet ruleSetForThisGame;
+        if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_BAC) {
+            ruleSetForThisGame = new TienLenMienBacRule();
+        } else if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_NAM) {
+            ruleSetForThisGame = new TienLenMienNamRule();
+        } else if (selectedGameVariant == GameVariant.SAM_LOC) {
+            ruleSetForThisGame = new SamLocRule();
+        } else {
+            throw new IllegalArgumentException("Loại game không hợp lệ: " + selectedGameVariant);
         }
+        System.out.println("  - RuleSet: " + ruleSetForThisGame.getClass().getSimpleName());
 
+        for (int i = 0; i < this.numberOfAIPlayers; i++) {
+            // ... (logic tạo AI strategy implementation như cũ) ...
+            players.add(new TienLenAI("AI " + (this.numberOfHumanPlayers + i + 1), getAIStrategyImpl(aiStrategy) , ruleSetForThisGame));
+        }
+        
+        if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_BAC) {
+            currentGame = new TienLenMienBacGame(players, (TienLenMienBacRule) ruleSetForThisGame);
+        } else if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_NAM) {
+            currentGame = new TienLenMienNamGame(players, (TienLenMienNamRule) ruleSetForThisGame);
+        } else if (selectedGameVariant == GameVariant.SAM_LOC) {
+            currentGame = new SamLocGame(players, (SamLocRule) ruleSetForThisGame);
+        } else {
+            throw new IllegalArgumentException("Loại game không hợp lệ: " + selectedGameVariant);
+        }
+        System.out.println("  - Đã tạo currentGame: " + currentGame.getName());
+        
+        gameGUI = new GraphicUIJavaFX(currentGame, primaryStage, this);
+        // Constructor của GraphicUIJavaFX đã gọi initGUI() và primaryStage.setScene()
 
-        currentGame = new TienLenGame(players, tienLenRule);
-        gameGUI = new GraphicUIJavaFX(currentGame, primaryStage); // GUI được khởi tạo và tự đăng ký làm listener
+        primaryStage.setTitle(currentGame.getName() + " - Đang Chơi");
+        // forceMaximize();
 
-        // Thiết lập callback khi game kết thúc để quay lại menu chính
-        currentGame.setOnGameEndCallback(() -> {
-            Platform.runLater(this::showMainMenu);
-        });
-
-
-        primaryStage.setTitle("Tiến Lên Miền Nam");
-        primaryStage.setMaximized(true);
-        // GraphicUIJavaFX đã tự tạo và đặt scene vào primaryStage trong constructor của nó
-        // Nên chỉ cần đảm bảo primaryStage được hiển thị.
-        // primaryStage.setScene(gameGUI.getScene()); // Dòng này không cần thiết nếu GUI tự đặt scene
-        primaryStage.show();
-
-        // Khởi động vòng lặp game
-        currentGame.dealCards();
-        gameGUI.updateGameState(); // Cập nhật trạng thái ban đầu của GUI
-        currentGame.setGeneralGameState(Game.GeneralGameState.RUNNING); // Đặt trạng thái game
-        currentGame.startGameLoop(); // Bắt đầu game loop trong thread riêng
+        currentGame.dealCards(); 
+        // gameGUI.updateGameState(); // Sẽ được gọi qua event listener
+        currentGame.setGeneralGameState(Game.GeneralGameState.RUNNING);
+        currentGame.startGameLoop();
+        
+        System.out.println("startGame() hoàn tất, game loop đã bắt đầu.");
+    }
+    
+    // Helper để lấy AI Strategy Implementation (bạn đã có tương tự)
+    public TienLenAIStrategy getAIStrategyImpl(TienLenAI.StrategyType type) {
+        if (selectedGameVariant == GameVariant.SAM_LOC) {
+            requiredThreeSpades = false;
+        }
+        // ... (return new RandomStrategy(), GreedyStrategy(), SmartStrategy())
+        switch (type) {
+            case RANDOM: return new core.ai.tienlenai.strategies.RandomStrategy(requiredThreeSpades);
+            case GREEDY: return new core.ai.tienlenai.strategies.GreedyStrategy(requiredThreeSpades);
+            case SMART:
+            default: return new core.ai.tienlenai.strategies.SmartStrategy(requiredThreeSpades);
+        }
     }
 
-    // Phương thức để dừng game hiện tại
     public void stopCurrentGame() {
         if (currentGame != null) {
-            System.out.println("Yêu cầu dừng game loop hiện tại...");
-            currentGame.removeGameEventListener(gameGUI); // Gỡ bỏ listener để tránh lỗi
-            currentGame.stopGameLoop();
+            System.out.println("Yêu cầu dừng game hiện tại...");
+            if (gameGUI != null) { // Hủy đăng ký listener trước
+                currentGame.removeGameEventListener(gameGUI);
+            }
+            currentGame.stopGameLoop(); // Dừng luồng game
+            // Chờ luồng game kết thúc (có thể không cần thiết nếu setDaemon(true))
+            try {
+                if (currentGame.gameThread != null && currentGame.gameThread.isAlive()) {
+                    currentGame.gameThread.join(500); // Chờ tối đa 0.5 giây
+                    if (currentGame.gameThread.isAlive()) {
+                        System.err.println("Luồng game không dừng kịp thời.");
+                        // currentGame.gameThread.interrupt(); // Cân nhắc nếu join không đủ
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Luồng chính bị ngắt khi chờ luồng game dừng.");
+            }
             currentGame = null;
-            gameGUI = null; // Giải phóng GUI
+            gameGUI = null;
+            System.out.println("Game hiện tại đã được dừng và dọn dẹp.");
         }
     }
+    private void forceMaximize() {
+	    System.out.println("forceMaximize() được gọi. Trạng thái ban đầu: isMaximized=" + primaryStage.isMaximized() +
+	                       ", W=" + primaryStage.getWidth() + ", H=" + primaryStage.getHeight());
 
-    // --- Helper for Menu Buttons ---
-    private Button createMenuButton(String text) {
-        Button button = new Button(text);
-        button.setPrefWidth(250);
-        button.setPrefHeight(60);
-        button.setFont(Font.font("Arial", FontWeight.BOLD, 22));
-        button.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 5; -fx-background-radius: 5;");
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #2980b9; -fx-text-fill: white; -fx-border-radius: 5; -fx-background-radius: 5;"));
-        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 5; -fx-background-radius: 5;"));
-        return button;
-    }
+	    Screen screen = Screen.getPrimary();
+	    Rectangle2D bounds = screen.getVisualBounds();
+
+	    boolean flagIsMaximized = primaryStage.isMaximized();
+	    boolean dimensionsAreCorrect = Math.abs(primaryStage.getWidth() - bounds.getWidth()) < 5 && // Cho phép sai số nhỏ
+	                                   Math.abs(primaryStage.getHeight() - bounds.getHeight()) < 5;
+
+	    if (flagIsMaximized && dimensionsAreCorrect) {
+	        System.out.println("   Đã maximized và kích thước đúng. Không cần hành động.");
+	        return;
+	    }
+
+	    // Nếu flag isMaximized=true nhưng kích thước sai
+	    if (flagIsMaximized && !dimensionsAreCorrect) {
+	        System.out.println("   isMaximized=true NHƯNG kích thước SAI. Thử đặt lại W/H thủ công...");
+	        // Tạm thời tắt listener của maximizedProperty để tránh nó phản ứng với các thay đổi bên dưới nếu có
+	        // (Cần cẩn thận với việc này, có thể không cần thiết)
+
+	        primaryStage.setWidth(bounds.getWidth());
+	        primaryStage.setHeight(bounds.getHeight());
+	        primaryStage.setX(bounds.getMinX());
+	        primaryStage.setY(bounds.getMinY());
+
+	        // Kiểm tra lại ngay sau khi đặt thủ công
+	        boolean manualSetWorked = Math.abs(primaryStage.getWidth() - bounds.getWidth()) < 5 &&
+	                                  Math.abs(primaryStage.getHeight() - bounds.getHeight()) < 5;
+
+	        System.out.println("   Sau khi đặt W/H thủ công: isMaximized=" + primaryStage.isMaximized() + // Flag có thể bị thay đổi
+	                           ", W=" + primaryStage.getWidth() + ", H=" + primaryStage.getHeight() +
+	                           ". Manual set worked: " + manualSetWorked);
+
+	        if (manualSetWorked) {
+	            // Nếu đặt thủ công đã đúng kích thước, thử đảm bảo flag isMaximized là true
+	            // mà không cần toggle mạnh.
+	            if (!primaryStage.isMaximized()) { // Nếu flag bị clear do set W/H
+	                Platform.runLater(() -> { // Chạy ở pulse tiếp theo
+	                    primaryStage.setMaximized(true); // Cố gắng đặt lại flag
+	                    System.out.println("   Đặt lại isMaximized=true sau khi manual W/H thành công.");
+	                });
+	            }
+	            System.out.println("   Đặt W/H thủ công có vẻ đã khắc phục.");
+	            return; // Kết thúc, hy vọng nó mượt hơn
+	        } else {
+	            // Nếu đặt thủ công không ăn thua, phải dùng đến toggle
+	            System.out.println("   Đặt W/H thủ công không hiệu quả. Buộc phải toggle maximized state...");
+	            primaryStage.setMaximized(false);
+	            Platform.runLater(() -> {
+	                primaryStage.setMaximized(true);
+	                System.out.println("   Đã toggle xong: isMaximized=" + primaryStage.isMaximized() +
+	                                   ", W=" + primaryStage.getWidth() + ", H=" + primaryStage.getHeight());
+	            });
+	            return;
+	        }
+	    }
+
+	    // Nếu flag isMaximized=false
+	    if (!flagIsMaximized) {
+	        System.out.println("   isMaximized=false. Đang đặt setMaximized(true)...");
+	        primaryStage.setMaximized(true);
+	        // Kiểm tra lại sau 1 pulse xem lệnh có thực sự hiệu quả về kích thước không
+	        Platform.runLater(() -> {
+	            boolean newDimsCorrect = primaryStage.isMaximized() &&
+	                                     Math.abs(primaryStage.getWidth() - bounds.getWidth()) < 5 &&
+	                                     Math.abs(primaryStage.getHeight() - bounds.getHeight()) < 5;
+	            System.out.println("   Sau khi setMaximized(true) (từ false): isMaximized=" + primaryStage.isMaximized() +
+	                               ", W=" + primaryStage.getWidth() + ", H=" + primaryStage.getHeight() +
+	                               ". Dims correct: " + newDimsCorrect);
+	            if (primaryStage.isMaximized() && !newDimsCorrect) {
+	                 System.err.println("   CẢNH BÁO: setMaximized(true) không làm kích thước đúng! Có thể cần toggle.");
+	                 // Lúc này, nếu vẫn sai, có thể phải gọi lại forceMaximize một lần nữa, 
+	                 // hoặc chấp nhận rằng có vấn đề sâu hơn.
+	                 // primaryStage.setMaximized(false);
+	                 // Platform.runLater(() -> primaryStage.setMaximized(true));
+	            }
+	        });
+	    }
+	}
 }

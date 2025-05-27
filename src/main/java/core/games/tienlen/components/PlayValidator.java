@@ -30,8 +30,7 @@ public class PlayValidator {
             // Nếu TienLenVariantRuleSet không có phương thức để kiểm tra "lá bài bắt đầu",
             // bạn có thể cần kiểm tra kiểu và ép kiểu một cách cẩn thận, hoặc thêm phương thức đó vào interface.
             // Giả sử hasStartingCard là một phần của TienLenVariantRuleSet (kế thừa từ RuleSet)
-            Card threeSpadesCard = new Card(Card.Suit.SPADES, Card.Rank.THREE); // Cụ thể cho Tiến Lên
-            if (!cardsToPlay.contains(threeSpadesCard)) {
+            if (!ruleSet.hasStartingCard(cardsToPlay)) {
                 gameContext.notifyMessage("Lượt đầu tiên phải đánh bài có 3 Bích!");
                 return false;
             }
@@ -82,7 +81,7 @@ public class PlayValidator {
         // Sử dụng this.ruleSet
         if (gameContext.getLastPlayedCards().isEmpty()) {
             // Kiểm tra 3 Bích cho lượt đầu game
-            if (gameContext.isFirstTurnOfGame() && currentPlayer.getHand().contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) {
+            if (gameContext.isFirstTurnOfGame() && ruleSet.hasStartingCard(currentPlayer.getHand())) {
                 // Nếu RuleSet có phương thức kiểm tra lá bài bắt buộc, dùng nó ở đây.
                 // Giả sử hasStartingCard là một phần của RuleSet mà TienLenVariantRuleSet kế thừa
                 // và nó được hiểu là "có lá bài bắt buộc phải đánh".

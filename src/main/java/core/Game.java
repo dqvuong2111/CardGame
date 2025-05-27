@@ -58,7 +58,7 @@ public abstract class Game<R extends TienLenVariantRuleSet> {
     public abstract String getGameStateDisplay();
     protected abstract void runGameLoop();
     protected abstract void stopGameLoop();
-    protected abstract void dealCards();
+    protected abstract void dealCards(int cardsPerPlayer);
     public abstract boolean checkGameOver();
     protected abstract List<TienLenPlayer> determineWinners(); // Thêm phương thức trừu tượng này
     public abstract List<Card> getLastPlayedCards();

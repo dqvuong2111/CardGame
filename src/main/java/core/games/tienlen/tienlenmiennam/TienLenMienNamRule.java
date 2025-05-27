@@ -105,4 +105,17 @@ public class TienLenMienNamRule implements TienLenVariantRuleSet {
 	public int getTwoRankValue() {
 		return 15; // Giá trị của quân 2 trong Miền Nam
 	}
+	
+	@Override
+	public boolean hasStartingCard(List<Card> cards) {
+		if(cards.contains(new Card(Card.Suit.SPADES, Card.Rank.THREE))) return true;
+		else {
+		return false;
+		}
+	}
+	
+	@Override
+	public int getCardsPerPlayer() {
+		return 13;
+	}
 }

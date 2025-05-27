@@ -2,7 +2,7 @@
 package ui.JavaFX;
 
 import core.Game;
-import core.Player;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 import core.Card;
 import javafx.application.Platform;
 import javafx.scene.Parent;
@@ -24,10 +24,10 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
     }
 
     protected abstract Parent initGUI();
-    public abstract void displayPlayerHand(Player player);
+    public abstract void displayPlayerHand(TienLenPlayer player);
     public abstract void showMessage(String message);
     public abstract void updateGameState();
-    public abstract List<Card> getPlayerCardSelection(Player player);
+    public abstract List<Card> getPlayerCardSelection(TienLenPlayer player);
 
     @Override
     public void onGameStateUpdated() {
@@ -40,7 +40,7 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
     }
 
     @Override
-    public void onPlayerTurnStarted(Player player) {
+    public void onPlayerTurnStarted(TienLenPlayer player) {
         Platform.runLater(() -> {
             showMessage("Lượt của " + player.getName());
             updateGameState();
@@ -48,7 +48,7 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
     }
 
     @Override
-    public void onCardsPlayed(Player player, List<Card> cardsPlayed, List<Card> lastPlayedCards) {
+    public void onCardsPlayed(TienLenPlayer player, List<Card> cardsPlayed, List<Card> lastPlayedCards) {
         Platform.runLater(() -> {
             showMessage(player.getName() + " đã đánh: " + cardsPlayed);
             updateGameState();
@@ -56,7 +56,7 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
     }
 
     @Override
-    public void onPlayerPassed(Player player) {
+    public void onPlayerPassed(TienLenPlayer player) {
         Platform.runLater(() -> {
             showMessage(player.getName() + " đã BỎ LƯỢT.");
             updateGameState();
@@ -64,7 +64,7 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
     }
 
     @Override
-    public void onRoundStarted(Player startingPlayer) {
+    public void onRoundStarted(TienLenPlayer startingPlayer) {
         Platform.runLater(() -> {
             showMessage("Vòng mới bắt đầu! Người đi đầu: " + startingPlayer.getName());
             updateGameState();
@@ -72,7 +72,7 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
     }
 
     @Override
-    public void onPlayerEliminated(Player player) {
+    public void onPlayerEliminated(TienLenPlayer player) {
         Platform.runLater(() -> {
             showMessage(player.getName() + " đã hết bài!");
             updateGameState();
@@ -80,7 +80,7 @@ public abstract class CardGameGUIJavaFX<T extends Game<?>> implements Game.GameE
     }
 
     @Override
-    public void onGameOver(List<Player> winners) {
+    public void onGameOver(List<TienLenPlayer> winners) {
     	System.out.println("onGameOver được gọi trong CardGameGUIJavaFX!");
         Platform.runLater(() -> {
             StringBuilder sb = new StringBuilder("GAME KẾT THÚC! Người thắng: ");

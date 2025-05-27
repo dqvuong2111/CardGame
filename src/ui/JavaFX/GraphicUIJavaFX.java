@@ -1,443 +1,490 @@
+// File: ui/JavaFX/GraphicUIJavaFX.java
 package ui.JavaFX;
 
-import core.*;
-import core.rules.TienLenGame;
+import core.Card;
+import core.Game;
+import core.games.tienlen.AbstractTienLenGame;
+import core.games.tienlen.TienLenGameState;
+import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.tienlen.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
+import javafx.scene.control.Label; // Giữ lại nếu dùng cho addDefaultTextEffect
+import javafx.scene.effect.DropShadow; // Giữ lại nếu dùng cho addDefaultTextEffect
+import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color; // Giữ lại nếu dùng cho addDefaultTextEffect
+import javafx.scene.text.Font; // Giữ lại nếu dùng cho addDefaultTextEffect
+import javafx.scene.text.FontWeight; // Giữ lại nếu dùng cho addDefaultTextEffect
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.scene.Parent; // Required for this.root
-import javafx.scene.Scene;  // Required for this.currentScene
+
+// Import các component bạn đã tạo từ package gamescreencomponents
+import ui.JavaFX.gamescreencomponents.CardView;
+import ui.JavaFX.gamescreencomponents.GameControlsComponent;
+import ui.JavaFX.gamescreencomponents.GameMessageComponent;
+import ui.JavaFX.gamescreencomponents.HumanHandComponent;
+// PlayerInfoComponent có thể không cần import trực tiếp ở đây nếu PlayersListComponent tự quản lý
+import ui.JavaFX.gamescreencomponents.PlayersListComponent;
+import ui.JavaFX.gamescreencomponents.TableCardsComponent;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class GraphicUIJavaFX extends CardGameGUIJavaFX<TienLenGame> {
+public class GraphicUIJavaFX extends CardGameGUIJavaFX<AbstractTienLenGame<? extends TienLenVariantRuleSet>> {
 
     private BorderPane rootLayout;
-    private VBox messageBox;
-    private Label messageLabel;
-    private HBox playedCardsBox;
-    private HBox playerHandBox;
-    private VBox controlBox;
-    private Button passButton;
-    private Button playButton;
-    private Button newGameButton;
+
+    // Khai báo các biến cho từng component UI
+    private GameMessageComponent gameMessageComponent;
+    private PlayersListComponent playersListComponent;
+    private TableCardsComponent tableCardsComponent;
+    private HumanHandComponent humanHandComponent;
+    private GameControlsComponent gameControlsComponent;
+
+    private SceneManager sceneManager;
 
     private List<Card> selectedCards = new ArrayList<>();
     private volatile boolean waitingForInput = false;
 
-    private Map<Player, VBox> playerPanels;
-
-    public GraphicUIJavaFX(TienLenGame game, Stage primaryStage) {
-        super(game, primaryStage); // Now the super constructor does less
-
-        this.root = initGUI(); // Initialize the 'root' field from the superclass. initGUI() is called ONCE.
-        this.currentScene = new Scene(this.root); // Initialize the 'currentScene' field from the superclass.
-
-        primaryStage.setScene(this.currentScene); // Set the definitive scene for the game.
-        primaryStage.setMaximized(false);
-        primaryStage.setMaximized(true); // Maximize the stage with this scene.
+    public GraphicUIJavaFX(AbstractTienLenGame<? extends TienLenVariantRuleSet> game, Stage primaryStage, SceneManager sceneManager) {
+        super(game, primaryStage);
+        this.sceneManager = sceneManager;
+        this.root = initGUI();
+        if (this.root == null) {
+            System.err.println("Lỗi: initGUI() trả về root là null trong GraphicUIJavaFX constructor.");
+            Platform.exit();
+            return;
+        }
+        this.currentScene = new Scene(this.root);
+        primaryStage.setScene(this.currentScene);
+        // game.addGameEventListener(this); đã được gọi trong super constructor
     }
-
 
     @Override
     protected Parent initGUI() {
-        playerPanels = new HashMap<>();
+        System.out.println("GraphicUIJavaFX: initGUI (phiên bản component hóa) bắt đầu.");
         rootLayout = new BorderPane();
-        rootLayout.setPadding(new Insets(20));
+        rootLayout.setPadding(new Insets(5, 10, 5, 10));
 
-        // --- Message Panel (TOP) ---
-        messageBox = new VBox();
-        messageLabel = new Label("Chào mừng bạn đến với Tiến Lên Miền Nam!");
-        messageLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        messageBox.setAlignment(Pos.CENTER);
-        messageBox.getChildren().add(messageLabel);
-        rootLayout.setTop(messageBox);
-        BorderPane.setMargin(messageBox, new Insets(0, 0, 20, 0));
-
-        // --- Players Section (LEFT) ---
-        VBox allPlayersInfoBox = new VBox(15);
-        allPlayersInfoBox.setPadding(new Insets(10));
-        allPlayersInfoBox.setAlignment(Pos.TOP_CENTER);
-        allPlayersInfoBox.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #f0f0f0;");
-        
-        allPlayersInfoBox.setPrefWidth(200);
-        allPlayersInfoBox.setMinWidth(180);
-        allPlayersInfoBox.setMaxWidth(250);
-        
-        List<Player> players = game.getPlayers();
-        
-        players.sort((p1, p2) -> {
-            if (!p1.isAI() && p2.isAI()) return -1;
-            if (p1.isAI() && !p2.isAI()) return 1;
-            return p1.getName().compareTo(p2.getName());
-        });
-
-        for (Player p : players) {
-            VBox playerPanel = new VBox(5);
-            playerPanel.setPadding(new Insets(10));
-            playerPanel.setAlignment(Pos.CENTER);
-            playerPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
-            
-            playerPanel.setPrefWidth(180);
-            playerPanel.setMinWidth(150); 
-            
-            Label nameLabel;
-            if (p.isAI()) {
-                nameLabel = new Label(p.getName() + " (AI)");
+        String imagePathForGameScreen = "/background/mm3.jpg";
+        try {
+            String imageUrl = getClass().getResource(imagePathForGameScreen).toExternalForm();
+            if (imageUrl != null) {
+                rootLayout.setStyle(
+                    "-fx-background-image: url('" + imageUrl + "'); " +
+                    "-fx-background-repeat: no-repeat; " +
+                    "-fx-background-position: center center; " +
+                    "-fx-background-size: cover;"
+                );
             } else {
-                nameLabel = new Label(p.getName());
+                System.err.println("Lỗi: Không tìm thấy ảnh nền GameScreen: " + imagePathForGameScreen);
+                rootLayout.setStyle("-fx-background-color: #2c3e50;"); // Màu nền tối dự phòng
             }
-            nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-            Label cardsCountLabel = new Label("Bài: " + p.getHand().size());
-            playerPanel.getChildren().addAll(nameLabel, cardsCountLabel);
+        } catch (Exception e) {
+            System.err.println("Ngoại lệ khi tải ảnh nền GameScreen: " + imagePathForGameScreen + ". " + e.getMessage());
+            rootLayout.setStyle("-fx-background-color: #2c3e50;");
+        }
 
-            playerPanels.put(p, playerPanel);
-            allPlayersInfoBox.getChildren().add(playerPanel);
+        // --- Khởi tạo các Component View ---
+        gameMessageComponent = new GameMessageComponent("Chào mừng đến với Tiến Lên!"); //
+
+        if (game != null && game.getPlayers() != null) {
+            // Truyền game.getPlayers() vì constructor PlayersListComponent nhận List<TienLenPlayer>
+            playersListComponent = new PlayersListComponent(game.getPlayers()); //
+        } else {
+            playersListComponent = new PlayersListComponent(new ArrayList<>());
         }
         
-        rootLayout.setLeft(allPlayersInfoBox);
-        BorderPane.setMargin(allPlayersInfoBox, new Insets(0, 20, 0, 0)); 
-
-        // --- Played Cards Section (CENTER) ---
-        VBox playedCardsContainer = new VBox(5);
-        playedCardsContainer.setAlignment(Pos.CENTER);
-        playedCardsContainer.setPadding(new Insets(20));
-        playedCardsContainer.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #f0f0f0;");
+        tableCardsComponent = new TableCardsComponent(); //
         
-        Label playedCardsTitle = new Label("Bài trên bàn");
-        playedCardsTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        humanHandComponent = new HumanHandComponent(
+                mouseEvent -> {
+                    Node sourceNode = (Node) mouseEvent.getSource();
+                    if (sourceNode instanceof CardView) {
+                        CardView clickedCardView = (CardView) sourceNode;
+                        Card card = clickedCardView.getCard();
+
+                        TienLenPlayer currentPlayerWhoIsAttemptingToSelect = null;
+                        if (game != null) {
+                            currentPlayerWhoIsAttemptingToSelect = game.getCurrentPlayer();
+                        }
+
+                        // Cho phép chọn bài nếu người chơi hiện tại là Human (không phải AI)
+                        // và game đang ở trạng thái chờ input của người chơi đó.
+                        if (currentPlayerWhoIsAttemptingToSelect != null && 
+                            !currentPlayerWhoIsAttemptingToSelect.isAI() &&
+                            game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+
+                            if (clickedCardView.isSelected()) {
+                                selectedCards.remove(card);
+                                clickedCardView.setSelected(false);
+                            } else {
+                                selectedCards.add(card);
+                                clickedCardView.setSelected(true);
+                            }
+
+                            if (gameControlsComponent != null) {
+                                boolean isGameOverForButton = (game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER);
+                                gameControlsComponent.updateButtonStates(
+                                    !selectedCards.isEmpty(),
+                                    game.canPass(currentPlayerWhoIsAttemptingToSelect), // Sử dụng currentPlayerWhoIsAttemptingToSelect
+                                    isGameOverForButton
+                                );
+                            }
+                        } else {
+                            // Tùy chọn: In ra log nếu không cho phép chọn bài để gỡ lỗi
+                            // System.out.println("Không thể chọn bài: currentPlayer=" + (currentPlayerWhoIsAttemptingToSelect != null ? currentPlayerWhoIsAttemptingToSelect.getName() : "null") + 
+                            //                    ", isAI=" + (currentPlayerWhoIsAttemptingToSelect != null ? currentPlayerWhoIsAttemptingToSelect.isAI() : "N/A") +
+                            //                    ", gameState=" + (game != null ? game.getCurrentTienLenState() : "N/A"));
+                        }
+                    }
+                }
+            );
+            
+            gameControlsComponent = new GameControlsComponent(
+                this::handlePlayButton,   
+                this::handlePassButton,    
+                this::handleNewGameButton, 
+                event -> {                 
+                    if (this.sceneManager != null) {
+                        this.sceneManager.stopCurrentGame(); 
+                        this.sceneManager.showMainMenu();
+                    } else {
+                        System.err.println("Lỗi: SceneManager là null trong GraphicUIJavaFX (backToMainMenuButton).");
+                    }
+                }
+            );
+
+
+        // --- Sắp xếp các Component vào rootLayout ---
+        rootLayout.setTop(gameMessageComponent); //
+        BorderPane.setMargin(gameMessageComponent, new Insets(5, 0, 10, 0));
+
+        rootLayout.setLeft(playersListComponent); //
+        BorderPane.setMargin(playersListComponent, new Insets(0, 10, 0, 0));
+
+        rootLayout.setCenter(tableCardsComponent); //
+        BorderPane.setMargin(tableCardsComponent, new Insets(0, 10, 10, 0));
         
-        playedCardsBox = new HBox(5);
-        playedCardsBox.setAlignment(Pos.CENTER);
-        playedCardsBox.setPadding(new Insets(10));
-        playedCardsBox.setStyle("-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #e0e0e0;");
+        rootLayout.setBottom(humanHandComponent); //
+        BorderPane.setMargin(humanHandComponent, new Insets(10, 0, 0, 0));
+
+        rootLayout.setRight(gameControlsComponent); //
+        BorderPane.setMargin(gameControlsComponent, new Insets(0, 0, 0, 10));
         
-        playedCardsContainer.getChildren().addAll(playedCardsTitle, playedCardsBox);
-        rootLayout.setCenter(playedCardsContainer);
-        BorderPane.setMargin(playedCardsContainer, new Insets(0, 0, 20, 0)); 
-
-        // --- Player Hand Panel (BOTTOM) ---
-        VBox humanHandDisplayContainer = new VBox(5); 
-        humanHandDisplayContainer.setAlignment(Pos.CENTER);
-        humanHandDisplayContainer.setPadding(new Insets(10));
-        humanHandDisplayContainer.setStyle("-fx-border-color: gray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f0f0ff;");
-
-        Label humanHandTitle = new Label("Bài của bạn");
-        humanHandTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        
-        playerHandBox = new HBox(5);
-        playerHandBox.setAlignment(Pos.CENTER);
-        playerHandBox.setPadding(new Insets(10, 0, 0, 0));
-
-        humanHandDisplayContainer.getChildren().addAll(humanHandTitle, playerHandBox);
-        rootLayout.setBottom(humanHandDisplayContainer);
-
-        // --- Control Panel (RIGHT) ---
-        controlBox = new VBox(20);
-        controlBox.setAlignment(Pos.CENTER);
-        controlBox.setPadding(new Insets(20, 10, 20, 10));
-        controlBox.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-background-color: #e8e8e8;");
-
-        controlBox.setPrefWidth(150);
-        controlBox.setMaxWidth(180);
-
-        playButton = new Button("Đánh bài");
-        playButton.setMaxWidth(Double.MAX_VALUE);
-        playButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        playButton.setOnAction(event -> handlePlayButton());
-
-        passButton = new Button("Bỏ lượt");
-        passButton.setMaxWidth(Double.MAX_VALUE);
-        passButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        passButton.setOnAction(event -> handlePassButton());
-
-        newGameButton = new Button("Ván mới");
-        newGameButton.setMaxWidth(Double.MAX_VALUE);
-        newGameButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        newGameButton.setOnAction(event -> handleNewGameButton());
-        newGameButton.setDisable(true);
-
-        controlBox.getChildren().addAll(playButton, passButton, newGameButton);
-        rootLayout.setRight(controlBox);
+        System.out.println("GraphicUIJavaFX: initGUI (component hóa) hoàn tất.");
         return rootLayout;
     }
-
-    @Override
-    public void displayPlayerHand(Player player) {
-        if (!player.isAI() && game.getCurrentPlayer() == player) {
-            playerHandBox.getChildren().clear();
-            List<Card> hand = new ArrayList<>(player.getHand());
-            hand.sort(((TienLenGame) game).ruleSet.getCardComparator());
-
-            for (Card card : hand) {
-                CardView cardView = new CardView(card);
-                if (selectedCards.contains(card)) {
-                    cardView.setSelected(true);
-                }
-
-                cardView.setOnMouseClicked(event -> {
-                    if (((TienLenGame) game).getCurrentState() == TienLenGame.GameState.WAITING_FOR_PLAYER_INPUT && game.getCurrentPlayer() == player) {
-                        if (cardView.isSelected()) {
-                            selectedCards.remove(card);
-                        } else {
-                            selectedCards.add(card);
-                        }
-                        cardView.setSelected(!cardView.isSelected());
-                    }
-                });
-                playerHandBox.getChildren().add(cardView);
+    
+    private TienLenPlayer getHumanPlayerFromGame() {
+        if (game != null && game.getPlayers() != null) {
+            for (TienLenPlayer p : game.getPlayers()) {
+                if (!p.isAI()) return p;
             }
-        } else if (player.isAI()) {
-            
-        } else {
-            
-            playerHandBox.getChildren().clear();
-            playerHandBox.getChildren().add(new Label("Đây không phải lượt của bạn."));
         }
+        return null;
+    }
+    
+    private void addDefaultTextEffect(Label label) {
+        DropShadow ds = new DropShadow();
+        ds.setRadius(2); ds.setOffsetX(1.0); ds.setOffsetY(1.0);
+        ds.setColor(Color.rgb(0, 0, 0, 0.7));
+        label.setEffect(ds);
     }
 
     @Override
     public void showMessage(String message) {
-        Platform.runLater(() -> messageLabel.setText(message));
+        if (gameMessageComponent != null) {
+            String safeMessage = message != null ? message : "";
+            Platform.runLater(() -> gameMessageComponent.setMessage(safeMessage)); //
+        }
     }
 
     @Override
     public void updateGameState() {
         Platform.runLater(() -> {
-            playedCardsBox.getChildren().clear();
-            List<Card> lastPlayed = game.getLastPlayedCards();
-            if (lastPlayed != null && !lastPlayed.isEmpty()) {
-                for (Card card : lastPlayed) {
-                    CardView playedCardView = new CardView(card);
-                    playedCardsBox.getChildren().add(playedCardView);
+            if (game == null) {
+                System.err.println("GraphicUIJavaFX.updateGameState: game instance is null!");
+                if (gameMessageComponent != null) {
+                    gameMessageComponent.setMessage("Lỗi: Game không tồn tại.");
                 }
-            } else {
-                playedCardsBox.getChildren().add(new Label("Không có bài trên bàn."));
+                return;
             }
 
-            for (Player p : game.getPlayers()) {
-                VBox playerPanel = playerPanels.get(p);
-                if (playerPanel != null) {
-                    Label cardsCountLabel = (Label) playerPanel.getChildren().get(1);
-                    cardsCountLabel.setText("Bài: " + p.getHand().size());
+            TienLenPlayer currentPlayer = game.getCurrentPlayer();
+            boolean isGameOver = (game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER);
 
-                    Label nameLabel = (Label) playerPanel.getChildren().get(0);
+            if (playersListComponent != null) {
+                playersListComponent.updatePlayers(game.getPlayers(), currentPlayer, isGameOver, game.getRuleSet().getCardComparator());
+            }
+            if (tableCardsComponent != null) {
+                tableCardsComponent.displayCards(game.getLastPlayedCards());
+            }
 
-                    if (game.getCurrentPlayer() == p) {
-                        playerPanel.setStyle("-fx-border-color: blue; -fx-border-width: 3; -fx-border-radius: 5; -fx-background-color: #e0e0ff;");
-                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI) - Lượt!" : " (Bạn) - Lượt!"));
-                        nameLabel.setTextFill(Color.BLUE);
+            if (humanHandComponent != null) {
+                if (currentPlayer != null && !currentPlayer.isAI()) { 
+                    humanHandComponent.setHandTitle("Bài của " + currentPlayer.getName());
+                    if (currentPlayer.getHand().isEmpty()) {
+                        humanHandComponent.showFinishedMessage();
+                    } else if (game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+                        humanHandComponent.displayHand(currentPlayer.getHand(), this.selectedCards, game.getRuleSet().getCardComparator());
                     } else {
-                        playerPanel.setStyle("-fx-border-color: lightgray; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f8f8f8;");
-                        nameLabel.setText(p.getName() + (p.isAI() ? " (AI)" : ""));
-                        nameLabel.setTextFill(Color.BLACK);
+                        humanHandComponent.displayHand(currentPlayer.getHand(), new ArrayList<>(), game.getRuleSet().getCardComparator()); 
+                    }
+                } else if (currentPlayer != null && currentPlayer.isAI()) { 
+                    humanHandComponent.setHandTitle("Máy đang chơi");
+                    humanHandComponent.showWaitingMessage("Đến lượt " + currentPlayer.getName() + " (AI)...");
+                    if (!selectedCards.isEmpty()) {
+                        selectedCards.clear();
+                    }
+                } else if (isGameOver) {
+                    humanHandComponent.setHandTitle("Game Kết Thúc");
+                    TienLenPlayer humanToDisplayAtGameOver = getHumanPlayerFromGame(); // Lấy người human đầu tiên để hiển thị khi game over
+                    
+                    if (humanToDisplayAtGameOver != null) {
+                        humanHandComponent.setHandTitle("Bài của " + humanToDisplayAtGameOver.getName() + " (Kết thúc)");
+                        if (humanToDisplayAtGameOver.getHand().isEmpty()) {
+                            humanHandComponent.showFinishedMessage();
+                        } else {
+                            humanHandComponent.displayHand(humanToDisplayAtGameOver.getHand(), new ArrayList<>(), game.getRuleSet().getCardComparator());
+                        }
+                    } else { 
+                        humanHandComponent.showWaitingMessage("Game đã kết thúc.");
+                    }
+                } else { 
+                    humanHandComponent.setHandTitle("Chờ ván mới...");
+                    humanHandComponent.clearHand();
+                }
+            }
+
+            if (gameControlsComponent != null) {
+                boolean canPlayCurrent = false;
+                boolean canPassCurrent = false;
+                if (!isGameOver && currentPlayer != null && !currentPlayer.isAI() &&
+                    game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+                    canPlayCurrent = !selectedCards.isEmpty();
+                    canPassCurrent = game.canPass(currentPlayer);
+                }
+                gameControlsComponent.updateButtonStates(canPlayCurrent, canPassCurrent, isGameOver);
+                waitingForInput = !isGameOver && currentPlayer != null && !currentPlayer.isAI() &&
+                                  game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT;
+            }
+        });
+    }
+
+    
+    
+    @Override
+    public void onPlayerTurnStarted(TienLenPlayer player) {
+        Platform.runLater(() -> {
+            if (gameMessageComponent != null) {
+                String turnMessage = "Lượt của " + player.getName();
+                if (player.isAI()) {
+                    turnMessage += " (AI)";
+                }
+                gameMessageComponent.setMessage(turnMessage);
+            }
+            if (!player.isAI()) { // Nếu người chơi bắt đầu lượt là Human
+                 selectedCards.clear(); // Xóa lựa chọn bài của người Human trước đó
+            }
+            updateGameState(); 
+        });
+    }
+
+
+    @Override
+    public void displayPlayerHand(TienLenPlayer player) {
+        // 'player' ở đây là người chơi mà có thể có sự kiện nào đó yêu cầu hiển thị bài cụ thể
+        // Tuy nhiên, updateGameState() là nơi chính để cập nhật giao diện humanHandComponent
+        // dựa trên currentPlayer.
+        // Nếu phương thức này vẫn được gọi từ đâu đó và quan trọng, cần đảm bảo nó nhất quán:
+        Platform.runLater(() -> {
+            if (humanHandComponent != null && game != null && game.getCurrentPlayer() != null) {
+                TienLenPlayer currentTurnPlayer = game.getCurrentPlayer();
+                // Chỉ hiển thị nếu 'player' được yêu cầu là người chơi Human hiện tại đang đến lượt
+                if (player != null && !player.isAI() && player == currentTurnPlayer &&
+                    game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+                    humanHandComponent.setHandTitle("Bài của " + player.getName());
+                    humanHandComponent.displayHand(player.getHand(), selectedCards, game.getRuleSet().getCardComparator());
+                }
+                // Các trường hợp khác đã được updateGameState xử lý
+            }
+        });
+    }
+    
+    private void handlePlayButton(ActionEvent event) {
+        if (game == null) {
+            if (gameMessageComponent != null) gameMessageComponent.setMessage("Lỗi: Game chưa được khởi tạo.");
+            else System.err.println("Lỗi: Game chưa được khởi tạo.");
+            return;
+        }
+        TienLenPlayer currentPlayer = game.getCurrentPlayer();
+        if (currentPlayer != null && !currentPlayer.isAI() &&
+            game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+            if (selectedCards.isEmpty()) {
+                if (gameMessageComponent != null) gameMessageComponent.setMessage("Bạn chưa chọn bài để đánh!");
+                else System.out.println("Bạn chưa chọn bài để đánh!");
+                return;
+            }
+            System.out.println("Người chơi Human " + currentPlayer.getName() + " dự định đánh: " + selectedCards);
+            game.setPlayerInput(new ArrayList<>(selectedCards));
+        } else {
+            String msg = "Không phải lượt của bạn hoặc game không chờ input.";
+            if (currentPlayer != null && currentPlayer.isAI()) {
+                msg = "Đang là lượt của máy, bạn không thể đánh bài.";
+            } else if (game != null && game.getCurrentTienLenState() != TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+                msg = "Game không ở trạng thái chờ bạn đánh bài.";
+            }
+            if (gameMessageComponent != null) gameMessageComponent.setMessage(msg);
+            else System.out.println(msg);
+        }
+    }
+
+    private void handlePassButton(ActionEvent event) {
+        if (game == null) {
+           if (gameMessageComponent != null) gameMessageComponent.setMessage("Lỗi: Game chưa được khởi tạo.");
+           else System.err.println("Lỗi: Game chưa được khởi tạo.");
+           return;
+       }
+       TienLenPlayer currentPlayer = game.getCurrentPlayer();
+       if (currentPlayer != null && !currentPlayer.isAI() &&
+           game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+           if (game.canPass(currentPlayer)) {
+                System.out.println("Người chơi Human " + currentPlayer.getName() + " dự định bỏ lượt.");
+                game.setPlayerInput(new ArrayList<>()); 
+           } else {
+               if (gameMessageComponent != null) gameMessageComponent.setMessage("Bạn không thể bỏ lượt lúc này!");
+               else System.out.println("Bạn không thể bỏ lượt lúc này!");
+           }
+       } else {
+           String msg = "Không phải lượt của bạn hoặc game không chờ input.";
+           if (currentPlayer != null && currentPlayer.isAI()) {
+               msg = "Đang là lượt của máy, bạn không thể bỏ lượt.";
+           } else if (game != null && game.getCurrentTienLenState() != TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+               msg = "Game không ở trạng thái chờ bạn bỏ lượt.";
+           }
+           if (gameMessageComponent != null) gameMessageComponent.setMessage(msg);
+           else System.out.println(msg);
+       }
+    }
+
+    @Override
+    public void onCardsPlayed(TienLenPlayer player, List<Card> cardsPlayed, List<Card> newLastPlayedCards) {
+        Platform.runLater(() -> {
+            // Xóa selectedCards nếu người vừa đánh bài là Human (bất kỳ Human nào, không chỉ người đầu tiên)
+            if (player != null && !player.isAI()) { 
+                selectedCards.clear(); 
+            }
+            if (gameMessageComponent != null) {
+                 gameMessageComponent.setMessage(player.getName() + " đánh: " + formatCardList(cardsPlayed));
+            }
+            updateGameState();
+        });
+    }
+    
+  
+    
+
+    private void handleNewGameButton(ActionEvent event) {
+    if (game != null) {
+        selectedCards.clear(); 
+        waitingForInput = false;
+        
+        System.out.println("GraphicUIJavaFX: Nút Ván Mới được nhấn. Đang gọi game.resetGame().");
+        game.resetGame(); // Dừng game loop cũ, reset trạng thái, chia bài mới.
+                          // Sau lệnh này, game.getGeneralGameState() nên là RUNNING.
+
+        // SAU KHI RESET, CẦN KHỞI ĐỘNG LẠI GAME LOOP CHO VÁN MỚI
+        if (game.getGeneralGameState() == Game.GeneralGameState.RUNNING) {
+            System.out.println("GraphicUIJavaFX: Game đã reset và ở trạng thái RUNNING. Đang gọi game.startGameLoop().");
+            game.startGameLoop(); // Khởi động lại vòng lặp game (sẽ tạo thread mới nếu cần)
+        } else {
+            // Trường hợp này không nên xảy ra nếu resetGame() hoạt động đúng.
+            String errorMessage = "Lỗi sau khi reset: Game không ở trạng thái RUNNING. Vòng lặp không được khởi động. Trạng thái hiện tại: " + game.getGeneralGameState();
+            System.err.println(errorMessage);
+            if (gameMessageComponent != null) {
+                gameMessageComponent.setMessage(errorMessage);
+            }
+        }
+    } else {
+        System.err.println("GraphicUIJavaFX: Nút Ván Mới được nhấn nhưng game là null.");
+    }
+}
+
+    
+    private String formatCardList(List<Card> cards) {
+        if (cards == null || cards.isEmpty()) return "";
+        return cards.stream().map(Card::toString).collect(Collectors.joining(" "));
+    }
+
+    @Override
+    public void onGameOver(List<TienLenPlayer> winners) {
+        System.out.println("GraphicUIJavaFX.onGameOver được gọi!");
+        String resultMessage = createGameOverMessage(winners);
+        Platform.runLater(() -> {
+            if (gameMessageComponent != null) {
+                gameMessageComponent.setMessage("GAME ĐÃ KẾT THÚC!");
+            }
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Game Kết Thúc");
+            alert.setHeaderText("Kết quả ván đấu:");
+            alert.setContentText(resultMessage);
+            alert.getButtonTypes().setAll(ButtonType.OK);
+            if (primaryStage != null) {
+                alert.initOwner(primaryStage);
+            }
+            alert.initModality(Modality.APPLICATION_MODAL);
+            alert.showAndWait();
+            // updateGameState() sẽ tự động được gọi khi trạng thái game là GAME_OVER,
+            // giúp cập nhật trạng thái các nút (ví dụ: bật nút "Ván mới").
+        });
+    }
+
+    private String createGameOverMessage(List<TienLenPlayer> winners){
+        StringBuilder sb = new StringBuilder(); 
+        if (winners == null || winners.isEmpty()) {
+            sb.append("Không ai thắng (có thể do lỗi hoặc hòa).\n");
+        } else {
+            sb.append("Thứ hạng:\n");
+            List<TienLenPlayer> sortedWinners = new ArrayList<>(winners);
+            sortedWinners.sort(Comparator.comparingInt(TienLenPlayer::getWinnerRank)
+                                       .thenComparing(p -> p.getHand().size())); 
+            
+            for (TienLenPlayer p : sortedWinners) {
+                if (p.getWinnerRank() > 0) { 
+                    sb.append(p.getWinnerRank()).append(". ").append(p.getName()); 
+                    sb.append("\n");
+                }
+            }
+            if (game != null && game.getPlayers() != null) {
+                for (TienLenPlayer p : game.getPlayers()) { 
+                    if (p.getWinnerRank() == 0 && !p.getHand().isEmpty()) { 
+                        sb.append("- ").append(p.getName()).append(" (Còn ").append(p.getHand().size()).append(" lá)\n"); 
                     }
                 }
             }
-
-            Player currentPlayer = game.getCurrentPlayer();
-            if (currentPlayer != null && !currentPlayer.isAI()) {
-                displayPlayerHand(currentPlayer);
-                boolean isHumanTurn = (currentPlayer == game.getCurrentPlayer());
-                boolean isWaitingForInputState = (((TienLenGame) game).getCurrentState() == TienLenGame.GameState.WAITING_FOR_PLAYER_INPUT);
-
-                playButton.setDisable(!(isHumanTurn && isWaitingForInputState));
-                passButton.setDisable(!(isHumanTurn && isWaitingForInputState && game.canPass(currentPlayer)));
-                
-                newGameButton.setDisable(!(game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER));
-
-                waitingForInput = (isHumanTurn && isWaitingForInputState);
-            } else {
-                playButton.setDisable(true);
-                passButton.setDisable(true);
-                newGameButton.setDisable(!(game.getGeneralGameState() == Game.GeneralGameState.GAME_OVER));
-                playerHandBox.getChildren().clear();
-                playerHandBox.getChildren().add(new Label("Chờ lượt của bạn..."));
-                selectedCards.clear();
-                waitingForInput = false;
-            }
-        });
-    }
-
-    private void handlePlayButton() {
-        if (waitingForInput) {
-            TienLenGame tienLenGame = (TienLenGame) game;
-            Player currentPlayer = game.getCurrentPlayer();
-            if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.isValidPlay(selectedCards)) {
-                tienLenGame.setPlayerInput(new ArrayList<>(selectedCards));
-                selectedCards.clear();
-                waitingForInput = false;
-            } else {
-                showMessage("Bài của bạn không hợp lệ. Vui lòng chọn lại.");
-            }
         }
-    }
-
-    private void handlePassButton() {
-        if (waitingForInput) {
-            TienLenGame tienLenGame = (TienLenGame) game;
-            Player currentPlayer = game.getCurrentPlayer();
-            if (currentPlayer != null && !currentPlayer.isAI() && tienLenGame.canPass(currentPlayer)) {
-                tienLenGame.setPlayerInput(new ArrayList<>());
-                selectedCards.clear();
-                waitingForInput = false;
-            } else {
-                showMessage("Bạn không thể bỏ lượt lúc này!");
-            }
-        }
-    }
-
-    private void handleNewGameButton() {
-        // Reset game state
-        game.resetGame();
-        game.dealCards();
-        
-        // Reset UI components
-        selectedCards.clear();
-        playerHandBox.getChildren().clear();
-        playedCardsBox.getChildren().clear();
-        messageLabel.setText("Chào mừng bạn đến với Tiến Lên Miền Nam!");
-        
-        // Disable buttons until human player's turn
-        playButton.setDisable(true);
-        passButton.setDisable(true);
-        newGameButton.setDisable(true);
-
-        // Update player panels (clear highlights, update card counts)
-        updateGameState(); 
-        
-        // Start game loop again
-        game.startGameLoop();
+        return sb.toString();
     }
 
     @Override
-    public void onGameOver(List<Player> winners) {
-        StringBuilder sb = new StringBuilder("GAME KẾT THÚC!\n");
-        if (winners.isEmpty()) {
-            sb.append("Không ai thắng (có thể do lỗi).\n");
-        } else {
-            sb.append("Thứ hạng:\n");
-            for (int i = 0; i < winners.size(); i++) {
-                Player p = winners.get(i);
-                sb.append(p.getWinnerRank()).append(". ").append(p.getName());
-                if (p.getWinnerRank() > 0) {
-                    sb.append(" (Hạng: ").append(p.getWinnerRank()).append(")");
-                }
-                sb.append("\n");
-            }
+    public List<Card> getPlayerCardSelection(TienLenPlayer player) {
+        // 'player' là người chơi mà game engine đang yêu cầu input
+        // (Tuy nhiên, với mô hình hiện tại, input được gửi qua game.setPlayerInput())
+        if (player != null && !player.isAI() && game != null && game.getCurrentPlayer() == player &&
+            game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+            return new ArrayList<>(selectedCards);
         }
-        
-        // Hiển thị dialog chiến thắng
-        Platform.runLater(() -> {
-            Alert alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle("Game Kết Thúc");
-            alert.setHeaderText("Kết quả ván đấu:");
-            alert.setContentText(sb.toString());
-
-            // Thêm nút "Chơi lại" và "Thoát"
-            ButtonType playAgainButton = new ButtonType("Chơi lại");
-            ButtonType exitButton = new ButtonType("Thoát");
-            alert.getButtonTypes().setAll(playAgainButton, exitButton);
-
-            // Đặt cửa sổ dialog là cửa sổ con của cửa sổ chính
-            alert.initOwner(primaryStage);
-            alert.initModality(Modality.APPLICATION_MODAL);
-
-            Optional<ButtonType> result = alert.showAndWait();
-
-            
-        });
-        
-        // Cần cập nhật trạng thái game và UI sau khi game kết thúc
-        updateGameState(); 
-    }
-
-    @Override
-    public List<Card> getPlayerCardSelection(Player player) {
-        return null;
-    }
-
-    class CardView extends StackPane {
-        private Card card;
-        private boolean selected;
-        private Rectangle backgroundRect;
-        private Label cardLabel;
-
-        public CardView(Card card) {
-            this.card = card;
-            this.selected = false;
-            
-            backgroundRect = new Rectangle(80, 110);
-            backgroundRect.setFill(Color.WHITE);
-            backgroundRect.setStroke(Color.BLACK);
-            backgroundRect.setArcWidth(10);
-            backgroundRect.setArcHeight(10);
-
-            String rankStr;
-            if(card.getRank().getValue() == 15) {
-                rankStr = "2" + card.suitToString();
-            } else if (card.getRank().getValue() == 14) {
-                rankStr = "A" + card.suitToString();
-            } else if (card.getRank().getValue() == 13) {
-                rankStr = "K" + card.suitToString();
-            } else if (card.getRank().getValue() == 12) {
-                rankStr = "Q" + card.suitToString();
-            } else if (card.getRank().getValue() == 11) {
-                rankStr = "J" + card.suitToString();
-            }
-            else {
-                rankStr = card.getRank().getValue() + card.suitToString();
-            }
-
-            cardLabel = new Label(rankStr);
-            Color suitColor = (card.getSuit() == Card.Suit.HEARTS || card.getSuit() == Card.Suit.DIAMONDS) ? Color.RED : Color.BLACK;
-            cardLabel.setTextFill(suitColor);
-            cardLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-
-            getChildren().addAll(backgroundRect, cardLabel);
-
-            updateSelectionBorder();
-        }
-
-        public boolean isSelected() {
-            return selected;
-        }
-
-        public void setSelected(boolean selected) {
-            this.selected = selected;
-            updateSelectionBorder();
-        }
-
-        private void updateSelectionBorder() {
-            if (selected) {
-                backgroundRect.setStroke(Color.BLUE);
-                backgroundRect.setStrokeWidth(3);
-                backgroundRect.setFill(new Color(0, 0, 1, 0.2));
-            } else {
-                backgroundRect.setStroke(Color.BLACK);
-                backgroundRect.setStrokeWidth(1);
-                backgroundRect.setFill(Color.WHITE);
-            }
-        }
+        return new ArrayList<>();
     }
 }

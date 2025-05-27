@@ -7,6 +7,8 @@ import core.ai.tienlenai.TienLenAI;
 import core.ai.tienlenai.TienLenAIStrategy;
 import core.games.tienlen.AbstractTienLenGame;
 import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.tienlen.samloc.SamLocRule;
+import core.games.tienlen.samloc.SamLocGame;
 import core.games.tienlen.tienlenmienbac.TienLenMienBacGame;
 import core.games.tienlen.tienlenmienbac.TienLenMienBacRule;
 import core.games.tienlen.tienlenmiennam.TienLenMienNamGame;
@@ -38,6 +40,7 @@ public class SceneManager {
     private AbstractTienLenGame<?> currentGame;
 
     public enum GameVariant {
+        SAM_LOC("Sâm Lốc"),
         TIEN_LEN_MIEN_NAM("Tiến Lên Miền Nam"),
         TIEN_LEN_MIEN_BAC("Tiến Lên Miền Bắc");
         private final String displayName;
@@ -48,7 +51,7 @@ public class SceneManager {
     public static final int FIXED_TOTAL_PLAYERS = 4; // Giữ lại là public static final
     private int numberOfHumanPlayers = 1;
     private int numberOfAIPlayers = FIXED_TOTAL_PLAYERS - numberOfHumanPlayers;
-    private GameVariant selectedGameVariant = GameVariant.TIEN_LEN_MIEN_NAM;
+    private GameVariant selectedGameVariant = GameVariant.SAM_LOC;
     private TienLenAI.StrategyType aiStrategy = TienLenAI.StrategyType.SMART;
 
     // Các label trên màn hình PlayerCustomization mà các scene con cần cập nhật
@@ -201,8 +204,12 @@ public class SceneManager {
         TienLenVariantRuleSet ruleSetForThisGame;
         if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_BAC) {
             ruleSetForThisGame = new TienLenMienBacRule();
-        } else { 
+        } else if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_NAM) {
             ruleSetForThisGame = new TienLenMienNamRule();
+        } else if (selectedGameVariant == GameVariant.SAM_LOC) {
+            ruleSetForThisGame = new SamLocRule();
+        } else {
+            throw new IllegalArgumentException("Loại game không hợp lệ: " + selectedGameVariant);
         }
         System.out.println("  - RuleSet: " + ruleSetForThisGame.getClass().getSimpleName());
 
@@ -213,8 +220,12 @@ public class SceneManager {
         
         if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_BAC) {
             currentGame = new TienLenMienBacGame(players, (TienLenMienBacRule) ruleSetForThisGame);
-        } else {
+        } else if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_NAM) {
             currentGame = new TienLenMienNamGame(players, (TienLenMienNamRule) ruleSetForThisGame);
+        } else if (selectedGameVariant == GameVariant.SAM_LOC) {
+            currentGame = new SamLocGame(players, (SamLocRule) ruleSetForThisGame);
+        } else {
+            throw new IllegalArgumentException("Loại game không hợp lệ: " + selectedGameVariant);
         }
         System.out.println("  - Đã tạo currentGame: " + currentGame.getName());
         
@@ -224,7 +235,7 @@ public class SceneManager {
         primaryStage.setTitle(currentGame.getName() + " - Đang Chơi");
         // forceMaximize();
 
-        currentGame.dealCards(); 
+        currentGame.dealCards(currentGame.getRuleSet().getCardsPerPlayer()); 
         // gameGUI.updateGameState(); // Sẽ được gọi qua event listener
         currentGame.setGeneralGameState(Game.GeneralGameState.RUNNING);
         currentGame.startGameLoop();
@@ -234,6 +245,8 @@ public class SceneManager {
     
     // Helper để lấy AI Strategy Implementation (bạn đã có tương tự)
     public TienLenAIStrategy getAIStrategyImpl(TienLenAI.StrategyType type) {
+        if (selectedGameVariant == GameVariant.SAM_LOC) {
+        }
         // ... (return new RandomStrategy(), GreedyStrategy(), SmartStrategy())
         switch (type) {
             case RANDOM: return new core.ai.tienlenai.strategies.RandomStrategy();

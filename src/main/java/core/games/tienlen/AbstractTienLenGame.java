@@ -85,7 +85,7 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
 
     // --- Các phương thức vòng đời game ---
     @Override
-    public void dealCards() {
+    public void dealCards(int cardsPerPlayer) {
         deck.reset(); deck.shuffle();
         for (TienLenPlayer player : players) {
             player.getHand().clear(); player.setHasNoCards(false); player.setWinnerRank(0);
@@ -96,8 +96,6 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
         tienLenState.resetPassCount();
         tienLenState.setPlayerWhoPlayedLastValidCards(null);
 
-
-        int cardsPerPlayer = 13;
         for (int i = 0; i < cardsPerPlayer; i++) {
             for (TienLenPlayer player : players) {
                 Card card = deck.drawCard(); if (card != null) player.addCard(card);
@@ -124,7 +122,7 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
         deck.reset(); // Reset bộ bài
         this.playerInputCardsInternal = null; // Clear input cũ
 
-        dealCards();
+        dealCards(ruleSet.getCardsPerPlayer());
 
         super.setGeneralGameState(Game.GeneralGameState.RUNNING);
         this.isFinished = false;
