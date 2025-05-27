@@ -16,16 +16,16 @@ public class TienLenAI extends TienLenPlayer {
         SMART
     }
 
-    private TienLenAIStrategy currentStrategyImplementation; // Tham chiếu đến đối tượng strategy cụ thể
+    private AIStrategy currentStrategyImplementation; // Tham chiếu đến đối tượng strategy cụ thể
     private RuleSet ruleSet; // RuleSet vẫn cần thiết cho các strategy
 
-    public TienLenAI(String name, TienLenAIStrategy strategyImplementation, RuleSet ruleSet) {
+    public TienLenAI(String name, AIStrategy strategyImplementation, RuleSet ruleSet) {
         super(name, true);
         this.currentStrategyImplementation = strategyImplementation;
         this.ruleSet = ruleSet;
     }
 
-    public void setStrategy(TienLenAIStrategy strategyImplementation) {
+    public void setStrategy(AIStrategy strategyImplementation) {
         this.currentStrategyImplementation = strategyImplementation;
     }
     

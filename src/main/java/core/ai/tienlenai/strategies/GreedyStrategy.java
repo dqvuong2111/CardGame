@@ -4,7 +4,7 @@ import core.Card;
 import core.ai.helpers.CombinationFinder;
 import core.ai.helpers.PlayableMoveGenerator;
 import core.ai.helpers.RemainingCardsValidator;
-import core.ai.tienlenai.TienLenAIStrategy;
+import core.ai.tienlenai.AIStrategy;
 import core.games.RuleSet;
 
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-public class GreedyStrategy implements TienLenAIStrategy {
+public class GreedyStrategy implements AIStrategy {
 	private Random random = new Random();
     @Override
     public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurnOfEntireGame) {

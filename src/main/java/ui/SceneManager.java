@@ -2,7 +2,7 @@ package ui;
 
 import core.Game;
 import core.ai.tienlenai.TienLenAI;
-import core.ai.tienlenai.TienLenAIStrategy;
+import core.ai.tienlenai.AIStrategy;
 import core.games.AbstractCardGame;
 import core.games.RuleSet;
 import core.games.samloc.SamLocGame;
@@ -237,7 +237,7 @@ public class SceneManager {
         currentGame.startGameLoop();
     }
     
-    public TienLenAIStrategy getAIStrategyImpl(TienLenAI.StrategyType type) {
+    public AIStrategy getAIStrategyImpl(TienLenAI.StrategyType type) {
         if (selectedGameVariant == GameVariant.SAM_LOC) {
         }
         switch (type) {

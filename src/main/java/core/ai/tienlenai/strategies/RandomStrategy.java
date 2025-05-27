@@ -3,14 +3,14 @@ package core.ai.tienlenai.strategies;
 import core.Card;
 import core.ai.helpers.PlayableMoveGenerator;
 import core.ai.helpers.RemainingCardsValidator;
-import core.ai.tienlenai.TienLenAIStrategy;
+import core.ai.tienlenai.AIStrategy;
 import core.games.RuleSet;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class RandomStrategy implements TienLenAIStrategy {
+public class RandomStrategy implements AIStrategy {
     private Random random = new Random();
     
     @Override

@@ -3,7 +3,7 @@ package core.ai.tienlenai;
 import java.util.List;
 import core.Card;
 import core.games.RuleSet;
-public interface TienLenAIStrategy {
+public interface AIStrategy {
     /**
      * Chọn các lá bài để đánh dựa trên chiến lược cụ thể.
      *
