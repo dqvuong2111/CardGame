@@ -1,8 +1,8 @@
 package ui;
 
 import core.Game;
+import core.ai.AIStrategy;
 import core.ai.tienlenai.TienLenAI;
-import core.ai.tienlenai.AIStrategy;
 import core.games.AbstractCardGame;
 import core.games.RuleSet;
 import core.games.samloc.SamLocGame;
@@ -241,10 +241,10 @@ public class SceneManager {
         if (selectedGameVariant == GameVariant.SAM_LOC) {
         }
         switch (type) {
-            case RANDOM: return new core.ai.tienlenai.strategies.RandomStrategy();
-            case GREEDY: return new core.ai.tienlenai.strategies.GreedyStrategy();
+            case RANDOM: return new core.ai.strategies.RandomStrategy();
+            case GREEDY: return new core.ai.strategies.GreedyStrategy();
             case SMART:
-            default: return new core.ai.tienlenai.strategies.SmartStrategy();
+            default: return new core.ai.strategies.SmartStrategy();
         }
     }
 

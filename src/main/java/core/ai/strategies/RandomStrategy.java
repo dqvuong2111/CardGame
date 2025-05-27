@@ -1,9 +1,9 @@
-package core.ai.tienlenai.strategies;
+package core.ai.strategies;
 
 import core.Card;
+import core.ai.AIStrategy;
 import core.ai.helpers.PlayableMoveGenerator;
 import core.ai.helpers.RemainingCardsValidator;
-import core.ai.tienlenai.AIStrategy;
 import core.games.RuleSet;
 
 import java.util.ArrayList;

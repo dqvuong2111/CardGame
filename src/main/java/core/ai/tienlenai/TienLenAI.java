@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import core.Card;
+import core.ai.AIStrategy;
 import core.games.RuleSet;
 import core.games.tienlenplayer.TienLenPlayer;
 

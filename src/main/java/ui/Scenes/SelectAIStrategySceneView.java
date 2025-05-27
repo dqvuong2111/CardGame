@@ -1,6 +1,5 @@
 package ui.Scenes;
 
-import core.ai.tienlenai.TienLenAI; 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -15,6 +14,8 @@ import javafx.scene.text.FontWeight;
 import ui.SceneManager;
 
 import java.util.List;
+
+import core.ai.tienlenai.TienLenAI;
 
 public class SelectAIStrategySceneView {
 

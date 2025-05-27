@@ -1,4 +1,4 @@
-package core.ai.tienlenai;
+package core.ai;
 
 import java.util.List;
 import core.Card;
