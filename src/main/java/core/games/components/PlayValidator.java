@@ -1,18 +1,18 @@
-package core.games.tienlen.components;
+package core.games.components;
 
 import core.Card;
-import core.games.tienlen.TienLenGameContext;
-import core.games.tienlen.TienLenVariantRuleSet;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.GameContext;
+import core.games.RuleSet;
+import core.games.tienlenplayer.TienLenPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PlayValidator {
-    private final TienLenGameContext gameContext;
-    private final TienLenVariantRuleSet ruleSet;
+    private final GameContext gameContext;
+    private final RuleSet ruleSet;
 
-    public PlayValidator(TienLenGameContext gameContext) {
+    public PlayValidator(GameContext gameContext) {
         this.gameContext = gameContext;
         this.ruleSet = gameContext.getRuleSet();
     }

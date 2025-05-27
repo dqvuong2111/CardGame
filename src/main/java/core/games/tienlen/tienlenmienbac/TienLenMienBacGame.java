@@ -2,11 +2,12 @@ package core.games.tienlen.tienlenmienbac;
 
 import core.Card;
 import core.Deck;
-import core.games.tienlen.AbstractTienLenGame;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.AbstractCardGame;
+import core.games.tienlenplayer.TienLenPlayer;
+
 import java.util.List;
 
-public class TienLenMienBacGame extends AbstractTienLenGame<TienLenMienBacRule> {
+public class TienLenMienBacGame extends AbstractCardGame<TienLenMienBacRule> {
 
     public TienLenMienBacGame(List<TienLenPlayer> players, TienLenMienBacRule ruleSet) {
         super("Tiến Lên Miền Bắc", players, new Deck(), ruleSet, 1L); 

@@ -1,8 +1,8 @@
 package ui;
 
 import core.*;
-import core.games.tienlen.*;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.*;
+import core.games.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BasicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenVariantRuleSet>> {
+public class BasicUI extends CardGameUI<AbstractCardGame<? extends RuleSet>> {
     private SceneManager sceneManager;
     private BorderPane rootLayout;
     private VBox messageBox;
@@ -45,7 +45,7 @@ public class BasicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenVar
 
     private Map<TienLenPlayer, VBox> playerPanels;
 
-    public BasicUI(AbstractTienLenGame<? extends TienLenVariantRuleSet> game, Stage primaryStage, SceneManager sceneManager) {
+    public BasicUI(AbstractCardGame<? extends RuleSet> game, Stage primaryStage, SceneManager sceneManager) {
         super(game, primaryStage); 
 
         this.sceneManager = sceneManager;
@@ -201,7 +201,7 @@ public class BasicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenVar
                 }
 
                 cardView.setOnMouseClicked(event -> {
-                    if (game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT && game.getCurrentPlayer() == player) {
+                    if (game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT && game.getCurrentPlayer() == player) {
                         if (cardView.isSelected()) {
                             selectedCards.remove(card);
                         } else {
@@ -279,7 +279,7 @@ public class BasicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenVar
                 if (currentPlayer != null && !currentPlayer.isAI()) {
                     // Đến lượt người chơi human
                     displayPlayerHand(currentPlayer);
-                    boolean isWaitingForInputState = (game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT);
+                    boolean isWaitingForInputState = (game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT);
 
                     playButton.setDisable(!isWaitingForInputState); // Chỉ kích hoạt khi đang chờ input
                     passButton.setDisable(!(isWaitingForInputState && game.canPass(currentPlayer)));
@@ -299,6 +299,7 @@ public class BasicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenVar
                 }
             }
             newGameButton.setDisable(!isGameOver);
+            backToMainMenuButton.setDisable(!isGameOver);
         });
     }
 

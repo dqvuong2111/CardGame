@@ -1,17 +1,17 @@
-package core.games.tienlen.components;
+package core.games.components;
 
 
 import core.Card;
-import core.games.tienlen.TienLenGameContext;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.GameContext;
+import core.games.tienlenplayer.TienLenPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class RoundManager {
-    private final TienLenGameContext gameContext;
+    private final GameContext gameContext;
 
-    public RoundManager(TienLenGameContext gameContext) {
+    public RoundManager(GameContext gameContext) {
         this.gameContext = gameContext;
     }
 

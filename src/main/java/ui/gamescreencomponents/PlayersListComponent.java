@@ -1,7 +1,7 @@
 package ui.gamescreencomponents;
 
 import core.Card;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.tienlenplayer.TienLenPlayer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.layout.VBox;

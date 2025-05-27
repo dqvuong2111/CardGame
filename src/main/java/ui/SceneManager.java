@@ -3,15 +3,15 @@ package ui;
 import core.Game;
 import core.ai.tienlenai.TienLenAI;
 import core.ai.tienlenai.TienLenAIStrategy;
+import core.games.AbstractCardGame;
+import core.games.RuleSet;
 import core.games.samloc.SamLocGame;
 import core.games.samloc.SamLocRule;
-import core.games.tienlen.AbstractTienLenGame;
-import core.games.tienlen.TienLenVariantRuleSet;
 import core.games.tienlen.tienlenmienbac.TienLenMienBacGame;
 import core.games.tienlen.tienlenmienbac.TienLenMienBacRule;
 import core.games.tienlen.tienlenmiennam.TienLenMienNamGame;
 import core.games.tienlen.tienlenmiennam.TienLenMienNamRule;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
@@ -32,7 +32,7 @@ import java.util.List;
 public class SceneManager {
     private Stage primaryStage;
     private CardGameUI gameGUI;
-    private AbstractTienLenGame<?> currentGame;
+    private AbstractCardGame<?> currentGame;
 
     public enum GameVariant {
         SAM_LOC("Sâm Lốc"),
@@ -199,7 +199,7 @@ public class SceneManager {
             players.add(new TienLenPlayer("Người " + (i + 1), false));
         }
 
-        TienLenVariantRuleSet ruleSetForThisGame;
+        RuleSet ruleSetForThisGame;
         if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_BAC) {
             ruleSetForThisGame = new TienLenMienBacRule();
         } else if (selectedGameVariant == GameVariant.TIEN_LEN_MIEN_NAM) {

@@ -4,7 +4,7 @@ import core.Card;
 import core.ai.helpers.PlayableMoveGenerator;
 import core.ai.helpers.RemainingCardsValidator;
 import core.ai.tienlenai.TienLenAIStrategy;
-import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.RuleSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class RandomStrategy implements TienLenAIStrategy {
     private Random random = new Random();
     
     @Override
-    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
+    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
         if (currentHand.isEmpty()) {
             return new ArrayList<>();
         }

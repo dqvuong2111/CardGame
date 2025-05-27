@@ -5,7 +5,7 @@ import core.ai.helpers.CombinationFinder;
 import core.ai.helpers.PlayableMoveGenerator;
 import core.ai.helpers.RemainingCardsValidator;
 import core.ai.tienlenai.TienLenAIStrategy;
-import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.RuleSet;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -15,7 +15,7 @@ import java.util.Random;
 public class GreedyStrategy implements TienLenAIStrategy {
 	private Random random = new Random();
     @Override
-    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
+    public List<Card> chooseCards(List<Card> currentHand, List<Card> lastPlayedCards, RuleSet ruleSet, boolean isFirstTurnOfEntireGame) {
         if (currentHand.isEmpty()) {
             return new ArrayList<>();
         }
@@ -95,7 +95,7 @@ public class GreedyStrategy implements TienLenAIStrategy {
     }
 
     // Helper để tìm các tổ hợp chứa một lá bài cụ thể (ví dụ 3 Bích)
-    private List<List<Card>> findPlaysContainingCard(List<Card> hand, Card specificCard, TienLenVariantRuleSet ruleSet, List<Card> lastPlayedCards) {
+    private List<List<Card>> findPlaysContainingCard(List<Card> hand, Card specificCard, RuleSet ruleSet, List<Card> lastPlayedCards) {
         List<List<Card>> FinnedPlays = new ArrayList<>();
         // 1. Đánh lẻ lá specificCard
         List<Card> singlePlay = List.of(specificCard);

@@ -1,16 +1,16 @@
 package core.games.tienlen.tienlenmiennam;
 
 import core.Card;
-import core.games.tienlen.TienLenVariantRuleSet;
-import core.games.tienlen.logic.TienLenCombinationLogic;
-import core.games.tienlen.logic.TienLenPlayabilityLogic;
+import core.games.RuleSet;
+import core.games.logic.CombinationLogic;
+import core.games.logic.PlayabilityLogic;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class TienLenMienNamRule implements TienLenVariantRuleSet {
+public class TienLenMienNamRule implements RuleSet {
 
 	private static final Comparator<Card> TIEN_LEN_CARD_COMPARATOR = new TienLenCardComparator();
 
@@ -55,19 +55,19 @@ public class TienLenMienNamRule implements TienLenVariantRuleSet {
 
 	@Override
     public Object getCombinationIdentifier(List<Card> cards) {
-        TienLenVariantRuleSet.CombinationType identifiedType = 
-            TienLenCombinationLogic.getCombinationType(cards, this);
+        RuleSet.CombinationType identifiedType = 
+            CombinationLogic.getCombinationType(cards, this);
         return identifiedType;
     }
 
 	 @Override
 	    public boolean isValidCombination(List<Card> cards) {
-	        return getCombinationIdentifier(cards) != TienLenVariantRuleSet.CombinationType.INVALID;
+	        return getCombinationIdentifier(cards) != RuleSet.CombinationType.INVALID;
 	    }
 
 	@Override
 	public boolean canPlayAfter(List<Card> newCards, List<Card> previousCards) {
-		return TienLenPlayabilityLogic.canPlayAfter(newCards, previousCards, this);
+		return PlayabilityLogic.canPlayAfter(newCards, previousCards, this);
 	}
 
 	@Override

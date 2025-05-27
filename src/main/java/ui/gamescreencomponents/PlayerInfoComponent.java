@@ -1,6 +1,6 @@
 package ui.gamescreencomponents;
 
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.tienlenplayer.TienLenPlayer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;

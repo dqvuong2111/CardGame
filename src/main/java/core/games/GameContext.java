@@ -1,11 +1,11 @@
-package core.games.tienlen;
+package core.games;
 
 import core.Card;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.tienlenplayer.TienLenPlayer;
 
 import java.util.List;
 
-public interface TienLenGameContext {
+public interface GameContext {
     // Getters cho trạng thái game
     List<Card> getLastPlayedCards();
     TienLenPlayer getLastPlayer();
@@ -15,10 +15,10 @@ public interface TienLenGameContext {
     List<TienLenPlayer> getPlayers();
     TienLenPlayer getCurrentPlayer();
     int getCurrentPlayerIndex();
-    TienLenVariantRuleSet getRuleSet();
+    RuleSet getRuleSet();
     List<TienLenPlayer> getWinners();
     int getCurrentWinnerRank();
-    TienLenGameState getCurrentTienLenState();
+    GameState getCurrentTienLenState();
 
     // Setters hoặc các phương thức hành động để thay đổi trạng thái
     void setLastPlayedCards(List<Card> cards);
@@ -29,7 +29,7 @@ public interface TienLenGameContext {
     void setPlayerWhoPlayedLastValidCards(TienLenPlayer player);
     void setCurrentPlayerByIndex(int index);
     void addWinner(TienLenPlayer winner, int rank);
-    void setCurrentTienLenState(TienLenGameState newState);
+    void setCurrentTienLenState(GameState newState);
 
     // Lấy input từ người chơi
     List<Card> getHumanInputSynchronously();

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import core.Card;
-import core.games.tienlen.TienLenVariantRuleSet;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.RuleSet;
+import core.games.tienlenplayer.TienLenPlayer;
 
 public class TienLenAI extends TienLenPlayer {
 
@@ -17,9 +17,9 @@ public class TienLenAI extends TienLenPlayer {
     }
 
     private TienLenAIStrategy currentStrategyImplementation; // Tham chiếu đến đối tượng strategy cụ thể
-    private TienLenVariantRuleSet ruleSet; // RuleSet vẫn cần thiết cho các strategy
+    private RuleSet ruleSet; // RuleSet vẫn cần thiết cho các strategy
 
-    public TienLenAI(String name, TienLenAIStrategy strategyImplementation, TienLenVariantRuleSet ruleSet) {
+    public TienLenAI(String name, TienLenAIStrategy strategyImplementation, RuleSet ruleSet) {
         super(name, true);
         this.currentStrategyImplementation = strategyImplementation;
         this.ruleSet = ruleSet;

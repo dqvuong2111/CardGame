@@ -1,7 +1,7 @@
 package core.ai.helpers;
 
 import core.Card;
-import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.RuleSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ public class PlayableMoveGenerator {
      * @param ruleSet Bộ luật của game.
      * @return Danh sách các List<Card>, mỗi List<Card> con là một lá đơn hợp lệ.
      */
-    public static List<List<Card>> findPlayableSingles(List<Card> hand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findPlayableSingles(List<Card> hand, List<Card> lastPlayedCards, RuleSet ruleSet) {
         if (hand == null || hand.isEmpty()) {
             return new ArrayList<>();
         }
@@ -37,7 +37,7 @@ public class PlayableMoveGenerator {
     /**
      * Tìm tất cả các đôi hợp lệ có thể đánh.
      */
-    public static List<List<Card>> findPlayablePairs(List<Card> hand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findPlayablePairs(List<Card> hand, List<Card> lastPlayedCards, RuleSet ruleSet) {
         if (hand == null || hand.size() < 2) {
             return new ArrayList<>();
         }
@@ -59,7 +59,7 @@ public class PlayableMoveGenerator {
     /**
      * Tìm tất cả các bộ ba hợp lệ có thể đánh.
      */
-    public static List<List<Card>> findPlayableTriples(List<Card> hand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findPlayableTriples(List<Card> hand, List<Card> lastPlayedCards, RuleSet ruleSet) {
         if (hand == null || hand.size() < 3) {
             return new ArrayList<>();
         }
@@ -83,7 +83,7 @@ public class PlayableMoveGenerator {
      * Sẽ tìm sảnh có cùng độ dài với lastPlayedCards nếu lastPlayedCards là sảnh,
      * hoặc sảnh có độ dài tối thiểu (ví dụ 3 lá) nếu bắt đầu vòng mới.
      */
-    public static List<List<Card>> findPlayableStraights(List<Card> hand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findPlayableStraights(List<Card> hand, List<Card> lastPlayedCards, RuleSet ruleSet) {
         if (hand == null || hand.size() < 3) { 
             return new ArrayList<>();
         }
@@ -137,7 +137,7 @@ public class PlayableMoveGenerator {
     /**
      * Tìm tất cả các tứ quý hợp lệ có thể đánh.
      */
-    public static List<List<Card>> findPlayableFourOfAKinds(List<Card> hand, List<Card> lastPlayedCards, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findPlayableFourOfAKinds(List<Card> hand, List<Card> lastPlayedCards, RuleSet ruleSet) {
          if (hand == null || hand.size() < 4) {
             return new ArrayList<>();
         }

@@ -1,12 +1,13 @@
 package core.games.samloc;
 
 import core.Deck;
-import core.games.tienlen.AbstractTienLenGame;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.AbstractCardGame;
+import core.games.tienlenplayer.TienLenPlayer;
+
 import java.util.List;
 import java.util.Random;
 
-public class SamLocGame extends AbstractTienLenGame<SamLocRule> {
+public class SamLocGame extends AbstractCardGame<SamLocRule> {
 
     public SamLocGame(List<TienLenPlayer> players, SamLocRule ruleSet) {
         super("Sâm Lốc", players, new Deck(), ruleSet, 1L); 

@@ -1,15 +1,16 @@
 package core.games.tienlen.tienlenmienbac;
 
 import core.Card;
-import core.games.tienlen.TienLenVariantRuleSet;
-import core.games.tienlen.logic.TienLenCombinationLogic;
-import core.games.tienlen.logic.TienLenPlayabilityLogic;
+import core.games.RuleSet;
+import core.games.logic.CombinationLogic;
+import core.games.logic.PlayabilityLogic;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class TienLenMienBacRule implements TienLenVariantRuleSet {
+public class TienLenMienBacRule implements RuleSet {
 
     private static final Comparator<Card> TIEN_LEN_MIEN_BAC_CARD_COMPARATOR = new TienLenMienBacCardComparator();
     public static int getTienLenValue(Card card) {
@@ -52,11 +53,11 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
         List<Card> sortedCards = new ArrayList<>(cards);
         Collections.sort(sortedCards, getCardComparator()); 
 
-        TienLenVariantRuleSet.CombinationType basicType = 
-            TienLenCombinationLogic.getCombinationType(sortedCards, this);
+        RuleSet.CombinationType basicType = 
+            CombinationLogic.getCombinationType(sortedCards, this);
 
         // --- ÁP DỤNG LUẬT RIÊNG CỦA MIỀN BẮC ---
-        if (basicType == TienLenVariantRuleSet.CombinationType.STRAIGHT) {
+        if (basicType == RuleSet.CombinationType.STRAIGHT) {
             // TienLenMienBacRule phải kiểm tra thêm tính đồng chất.
             if (sortedCards.size() < 3) return CombinationType.INVALID; 
             Card.Suit firstSuit = sortedCards.get(0).getSuit();
@@ -68,7 +69,7 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
             return CombinationType.STRAIGHT; 
         }
         
-        if (basicType == TienLenVariantRuleSet.CombinationType.PAIR) {
+        if (basicType == RuleSet.CombinationType.PAIR) {
             Card card1 = sortedCards.get(0); 
             Card card2 = sortedCards.get(1);
 
@@ -82,16 +83,16 @@ public class TienLenMienBacRule implements TienLenVariantRuleSet {
 
     @Override
     public boolean isValidCombination(List<Card> cards) {
-        return getCombinationIdentifier(cards) != TienLenVariantRuleSet.CombinationType.INVALID;
+        return getCombinationIdentifier(cards) != RuleSet.CombinationType.INVALID;
     }
 
     @Override
     public boolean canPlayAfter(List<Card> newCards, List<Card> previousCards) {
-        boolean canPlayGenerally = TienLenPlayabilityLogic.canPlayAfter(newCards, previousCards, this);
+        boolean canPlayGenerally = PlayabilityLogic.canPlayAfter(newCards, previousCards, this);
         if (!canPlayGenerally) return false;
 
-        TienLenVariantRuleSet.CombinationType newType = (TienLenVariantRuleSet.CombinationType) getCombinationIdentifier(newCards);
-        TienLenVariantRuleSet.CombinationType prevType = (TienLenVariantRuleSet.CombinationType) getCombinationIdentifier(previousCards);
+        RuleSet.CombinationType newType = (RuleSet.CombinationType) getCombinationIdentifier(newCards);
+        RuleSet.CombinationType prevType = (RuleSet.CombinationType) getCombinationIdentifier(previousCards);
 
         if (newType != prevType) {
             return false;                // Phải cùng loại bài (đơn với đơn, đôi với đôi, v.v.)

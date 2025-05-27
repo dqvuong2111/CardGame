@@ -2,10 +2,10 @@ package ui;
 
 import core.Card;
 import core.Game;
-import core.games.tienlen.AbstractTienLenGame;
-import core.games.tienlen.TienLenGameState;
-import core.games.tienlen.TienLenVariantRuleSet;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.AbstractCardGame;
+import core.games.GameState;
+import core.games.RuleSet;
+import core.games.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
@@ -29,7 +29,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenVariantRuleSet>> {
+public class GraphicUI extends CardGameUI<AbstractCardGame<? extends RuleSet>> {
 
     private BorderPane rootLayout;
 
@@ -44,7 +44,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
     private List<Card> selectedCards = new ArrayList<>();
     private volatile boolean waitingForInput = false;
 
-    public GraphicUI(AbstractTienLenGame<? extends TienLenVariantRuleSet> game, Stage primaryStage, SceneManager sceneManager) {
+    public GraphicUI(AbstractCardGame<? extends RuleSet> game, Stage primaryStage, SceneManager sceneManager) {
         super(game, primaryStage);
         this.sceneManager = sceneManager;
         this.root = initGUI();
@@ -106,7 +106,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
                         // và game đang ở trạng thái chờ input của người chơi đó.
                         if (currentPlayerWhoIsAttemptingToSelect != null && 
                             !currentPlayerWhoIsAttemptingToSelect.isAI() &&
-                            game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+                            game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT) {
 
                             if (clickedCardView.isSelected()) {
                                 selectedCards.remove(card);
@@ -206,7 +206,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
                     humanHandComponent.setHandTitle("Bài của " + currentPlayer.getName());
                     if (currentPlayer.getHand().isEmpty()) {
                         humanHandComponent.showFinishedMessage();
-                    } else if (game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+                    } else if (game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT) {
                         humanHandComponent.displayHand(currentPlayer.getHand(), this.selectedCards, game.getRuleSet().getCardComparator());
                     } else {
                         humanHandComponent.displayHand(currentPlayer.getHand(), new ArrayList<>(), game.getRuleSet().getCardComparator()); 
@@ -241,13 +241,13 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
                 boolean canPlayCurrent = false;
                 boolean canPassCurrent = false;
                 if (!isGameOver && currentPlayer != null && !currentPlayer.isAI() &&
-                    game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+                    game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT) {
                     canPlayCurrent = !selectedCards.isEmpty();
                     canPassCurrent = game.canPass(currentPlayer);
                 }
                 gameControlsComponent.updateButtonStates(canPlayCurrent, canPassCurrent, isGameOver);
                 waitingForInput = !isGameOver && currentPlayer != null && !currentPlayer.isAI() &&
-                                  game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT;
+                                  game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT;
             }
         });
     }
@@ -278,7 +278,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
             if (humanHandComponent != null && game != null && game.getCurrentPlayer() != null) {
                 TienLenPlayer currentTurnPlayer = game.getCurrentPlayer();
                 if (player != null && !player.isAI() && player == currentTurnPlayer &&
-                    game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+                    game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT) {
                     humanHandComponent.setHandTitle("Bài của " + player.getName());
                     humanHandComponent.displayHand(player.getHand(), selectedCards, game.getRuleSet().getCardComparator());
                 }
@@ -294,7 +294,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
         }
         TienLenPlayer currentPlayer = game.getCurrentPlayer();
         if (currentPlayer != null && !currentPlayer.isAI() &&
-            game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+            game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT) {
             if (selectedCards.isEmpty()) {
                 if (gameMessageComponent != null) gameMessageComponent.setMessage("Bạn chưa chọn bài để đánh!");
                 return;
@@ -304,7 +304,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
             String msg = "Không phải lượt của bạn hoặc game không chờ input.";
             if (currentPlayer != null && currentPlayer.isAI()) {
                 msg = "Đang là lượt của máy, bạn không thể đánh bài.";
-            } else if (game != null && game.getCurrentTienLenState() != TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+            } else if (game != null && game.getCurrentTienLenState() != GameState.WAITING_FOR_PLAYER_INPUT) {
                 msg = "Game không ở trạng thái chờ bạn đánh bài.";
             }
             if (gameMessageComponent != null) gameMessageComponent.setMessage(msg);
@@ -319,7 +319,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
        }
        TienLenPlayer currentPlayer = game.getCurrentPlayer();
        if (currentPlayer != null && !currentPlayer.isAI() &&
-           game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+           game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT) {
            if (game.canPass(currentPlayer)) {
                 game.setPlayerInput(new ArrayList<>()); 
            } else {
@@ -329,7 +329,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
            String msg = "Không phải lượt của bạn hoặc game không chờ input.";
            if (currentPlayer != null && currentPlayer.isAI()) {
                msg = "Đang là lượt của máy, bạn không thể bỏ lượt.";
-           } else if (game != null && game.getCurrentTienLenState() != TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+           } else if (game != null && game.getCurrentTienLenState() != GameState.WAITING_FOR_PLAYER_INPUT) {
                msg = "Game không ở trạng thái chờ bạn bỏ lượt.";
            }
            if (gameMessageComponent != null) gameMessageComponent.setMessage(msg);
@@ -426,7 +426,7 @@ public class GraphicUI extends CardGameUI<AbstractTienLenGame<? extends TienLenV
     @Override
     public List<Card> getPlayerCardSelection(TienLenPlayer player) {
         if (player != null && !player.isAI() && game != null && game.getCurrentPlayer() == player &&
-            game.getCurrentTienLenState() == TienLenGameState.WAITING_FOR_PLAYER_INPUT) {
+            game.getCurrentTienLenState() == GameState.WAITING_FOR_PLAYER_INPUT) {
             return new ArrayList<>(selectedCards);
         }
         return new ArrayList<>();

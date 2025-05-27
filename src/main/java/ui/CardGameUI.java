@@ -1,7 +1,7 @@
 package ui;
 
 import core.Game;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.tienlenplayer.TienLenPlayer;
 import core.Card;
 import javafx.application.Platform;
 import javafx.scene.Parent;

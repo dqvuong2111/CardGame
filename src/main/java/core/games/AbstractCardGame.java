@@ -1,10 +1,10 @@
-package core.games.tienlen;
+package core.games;
 
 import core.*;
-import core.games.tienlen.components.PlayValidator;
-import core.games.tienlen.components.RoundManager;
-import core.games.tienlen.components.TurnProcessor;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.components.PlayValidator;
+import core.games.components.RoundManager;
+import core.games.components.TurnProcessor;
+import core.games.tienlenplayer.TienLenPlayer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,9 +12,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> extends Game<R> implements Runnable, TienLenGameContext {
+public abstract class AbstractCardGame<R extends RuleSet> extends Game<R> implements Runnable, GameContext {
 
-    protected final TienLenState tienLenState;
+    protected final State tienLenState;
     private volatile List<Card> playerInputCardsInternal;
     private final Object playerInputLock = new Object();
     protected final long aiDelaySecondsInternal;
@@ -23,9 +23,9 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
     protected final PlayValidator playValidator;
     protected final RoundManager roundManager;
 
-    public AbstractTienLenGame(String gameName, List<TienLenPlayer> players, Deck deck, R ruleSet, long aiDelay) {
+    public AbstractCardGame(String gameName, List<TienLenPlayer> players, Deck deck, R ruleSet, long aiDelay) {
         super(gameName, players, deck, ruleSet);
-        this.tienLenState = new TienLenState();
+        this.tienLenState = new State();
         this.aiDelaySecondsInternal = aiDelay;
         this.playerInputCardsInternal = null;
 
@@ -54,8 +54,8 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
     @Override public List<TienLenPlayer> getWinners() { return tienLenState.getWinners(); }
     @Override public int getCurrentWinnerRank() { return tienLenState.getCurrentWinnerRank(); }
     @Override public void addWinner(TienLenPlayer winner, int rank) { tienLenState.addWinner(winner, rank); }
-    @Override public TienLenGameState getCurrentTienLenState() { return tienLenState.getCurrentTienLenGameState(); }
-    @Override public void setCurrentTienLenState(TienLenGameState newState) {
+    @Override public GameState getCurrentTienLenState() { return tienLenState.getCurrentTienLenGameState(); }
+    @Override public void setCurrentTienLenState(GameState newState) {
         tienLenState.setCurrentTienLenGameState(newState);
         notifyGameStateUpdated(); // Vẫn gọi notify từ Game
     }
@@ -103,7 +103,7 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
         findStartingPlayerOfGameVariant();                      // Gọi phương thức trừu tượng (lớp con cài đặt)
         
         tienLenState.setFirstTurnOfGame(true);          // Đặt lại cờ
-        setCurrentTienLenState(TienLenGameState.ROUND_IN_PROGRESS);     // Sử dụng setter của context
+        setCurrentTienLenState(GameState.ROUND_IN_PROGRESS);     // Sử dụng setter của context
         notifyMessage("Đã chia bài xong. " + getCurrentPlayer().getName() + " đi trước!");
     }
 
@@ -142,8 +142,8 @@ public abstract class AbstractTienLenGame<R extends TienLenVariantRuleSet> exten
                 continue;
             }
 
-            if (currentPlayer.isAI()) setCurrentTienLenState(TienLenGameState.AI_THINKING);
-            else setCurrentTienLenState(TienLenGameState.WAITING_FOR_PLAYER_INPUT);
+            if (currentPlayer.isAI()) setCurrentTienLenState(GameState.AI_THINKING);
+            else setCurrentTienLenState(GameState.WAITING_FOR_PLAYER_INPUT);
             notifyPlayerTurnStarted(currentPlayer);
 
             List<Card> cardsAttempted = turnProcessor.getPlayerAction(currentPlayer);

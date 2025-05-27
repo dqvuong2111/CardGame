@@ -1,11 +1,11 @@
-package core.games.tienlen;
+package core.games;
 
 import java.util.Comparator;
 import java.util.List;
 
 import core.Card;
 
-public interface TienLenVariantRuleSet {
+public interface RuleSet {
 	
 	 enum CombinationType {
 	        SINGLE, PAIR, TRIPLE, STRAIGHT,

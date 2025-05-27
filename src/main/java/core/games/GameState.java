@@ -1,6 +1,6 @@
-package core.games.tienlen;
+package core.games;
 
-public enum TienLenGameState {
+public enum GameState {
     INITIALIZING,
     WAITING_FOR_PLAYER_INPUT,
     AI_THINKING,

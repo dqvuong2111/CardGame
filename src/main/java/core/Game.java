@@ -3,11 +3,11 @@ package core;
 import java.util.ArrayList;
 import java.util.List;
 
-import core.games.tienlen.TienLenVariantRuleSet;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.RuleSet;
+import core.games.tienlenplayer.TienLenPlayer;
 import javafx.application.Platform;
 
-public abstract class Game<R extends TienLenVariantRuleSet> {
+public abstract class Game<R extends RuleSet> {
 
     // Thuộc tính (Fields)
     protected String name;

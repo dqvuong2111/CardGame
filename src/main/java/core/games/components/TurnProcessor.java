@@ -1,18 +1,18 @@
-package core.games.tienlen.components;
+package core.games.components;
 
 import core.Card;
 import core.ai.tienlenai.TienLenAI;
-import core.games.tienlen.TienLenGameContext;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.GameContext;
+import core.games.tienlenplayer.TienLenPlayer;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class TurnProcessor {
-    private final TienLenGameContext gameContext;
+    private final GameContext gameContext;
     private final long aiDelaySeconds;
 
-    public TurnProcessor(TienLenGameContext gameContext, long aiDelaySeconds) {
+    public TurnProcessor(GameContext gameContext, long aiDelaySeconds) {
         this.gameContext = gameContext;
         this.aiDelaySeconds = aiDelaySeconds;
     }

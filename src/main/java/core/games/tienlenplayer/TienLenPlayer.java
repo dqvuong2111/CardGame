@@ -1,4 +1,4 @@
-package core.games.tienlen.tienlenplayer;
+package core.games.tienlenplayer;
 
 import core.Player;
 

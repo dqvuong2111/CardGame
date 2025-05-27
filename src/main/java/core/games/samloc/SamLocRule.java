@@ -1,15 +1,16 @@
 package core.games.samloc;
 
 import core.Card;
-import core.games.tienlen.TienLenVariantRuleSet;
-import core.games.tienlen.logic.TienLenCombinationLogic;
-import core.games.tienlen.logic.TienLenPlayabilityLogic;
+import core.games.RuleSet;
+import core.games.logic.CombinationLogic;
+import core.games.logic.PlayabilityLogic;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class SamLocRule implements TienLenVariantRuleSet {
+public class SamLocRule implements RuleSet {
 
     // Giữ lại Comparator và các hàm getTienLenBacValue của Miền Bắc
     private static final Comparator<Card> SAM_LOC_CARD_COMPARATOR = new SamLocCardComparator();
@@ -45,10 +46,10 @@ public class SamLocRule implements TienLenVariantRuleSet {
         List<Card> sortedCards = new ArrayList<>(cards);
         Collections.sort(sortedCards, getCardComparator());
 
-        TienLenVariantRuleSet.CombinationType basicType = 
-            TienLenCombinationLogic.getCombinationType(sortedCards, this);
+        RuleSet.CombinationType basicType = 
+            CombinationLogic.getCombinationType(sortedCards, this);
 
-        if (basicType == TienLenVariantRuleSet.CombinationType.STRAIGHT) {
+        if (basicType == RuleSet.CombinationType.STRAIGHT) {
 
             if (sortedCards.size() < 3) return CombinationType.INVALID; 
   
@@ -60,16 +61,16 @@ public class SamLocRule implements TienLenVariantRuleSet {
 
     @Override
     public boolean isValidCombination(List<Card> cards) {
-        return getCombinationIdentifier(cards) != TienLenVariantRuleSet.CombinationType.INVALID;
+        return getCombinationIdentifier(cards) != RuleSet.CombinationType.INVALID;
     }
 
     @Override
     public boolean canPlayAfter(List<Card> newCards, List<Card> previousCards) {
-        boolean canPlayGenerally = TienLenPlayabilityLogic.canPlayAfter(newCards, previousCards, this);
+        boolean canPlayGenerally = PlayabilityLogic.canPlayAfter(newCards, previousCards, this);
         if (!canPlayGenerally) return false;
 
-        TienLenVariantRuleSet.CombinationType newType = (TienLenVariantRuleSet.CombinationType) getCombinationIdentifier(newCards);
-        TienLenVariantRuleSet.CombinationType prevType = (TienLenVariantRuleSet.CombinationType) getCombinationIdentifier(previousCards);
+        RuleSet.CombinationType newType = (RuleSet.CombinationType) getCombinationIdentifier(newCards);
+        RuleSet.CombinationType prevType = (RuleSet.CombinationType) getCombinationIdentifier(previousCards);
 
         if (newType != prevType) {
             return false;

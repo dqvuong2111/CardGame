@@ -1,7 +1,7 @@
 package core.ai.helpers;
 
 import core.Card;
-import core.games.tienlen.TienLenVariantRuleSet;
+import core.games.RuleSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,12 +9,12 @@ import java.util.stream.Collectors;
 
 public class CombinationFinder {
 
-    public static List<List<Card>> findAllSingles(List<Card> hand, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findAllSingles(List<Card> hand, RuleSet ruleSet) {
         if (hand == null) return new ArrayList<>();
         return hand.stream().map(List::of).collect(Collectors.toList());
     }
 
-    public static List<List<Card>> findAllPairs(List<Card> hand, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findAllPairs(List<Card> hand, RuleSet ruleSet) {
         if (hand == null || hand.size() < 2) return new ArrayList<>();
         List<List<Card>> pairs = new ArrayList<>();
         List<Card> sortedHand = new ArrayList<>(hand);
@@ -53,7 +53,7 @@ public class CombinationFinder {
         return distinctRankPairs;
     }
 
-    public static List<List<Card>> findAllTriples(List<Card> hand, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findAllTriples(List<Card> hand, RuleSet ruleSet) {
         if (hand == null || hand.size() < 3) return new ArrayList<>();
         List<List<Card>> triples = new ArrayList<>();
         List<Card> sortedHand = new ArrayList<>(hand);
@@ -73,7 +73,7 @@ public class CombinationFinder {
         return triples;
     }
 
-    public static List<List<Card>> findAllFourOfAKind(List<Card> hand, TienLenVariantRuleSet ruleSet) {
+    public static List<List<Card>> findAllFourOfAKind(List<Card> hand, RuleSet ruleSet) {
         if (hand == null || hand.size() < 4) return new ArrayList<>();
         List<List<Card>> quads = new ArrayList<>();
         List<Card> sortedHand = new ArrayList<>(hand);
@@ -95,7 +95,7 @@ public class CombinationFinder {
         return quads;
     }
 
-    public static List<List<Card>> findAllStraights(List<Card> hand, TienLenVariantRuleSet ruleSet, int minLength) {
+    public static List<List<Card>> findAllStraights(List<Card> hand, RuleSet ruleSet, int minLength) {
         if (hand == null || hand.size() < minLength || minLength < 3) {
             return new ArrayList<>();
         }

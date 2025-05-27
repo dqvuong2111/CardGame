@@ -1,12 +1,12 @@
-package core.games.tienlen;
+package core.games;
 
 import core.Card;
-import core.games.tienlen.tienlenplayer.TienLenPlayer;
+import core.games.tienlenplayer.TienLenPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TienLenState {
+public class State {
     private List<Card> lastPlayedCards;
     private TienLenPlayer lastPlayer;
     private int passCount;
@@ -14,9 +14,9 @@ public class TienLenState {
     private List<TienLenPlayer> winners;
     private int currentWinnerRank;
     private TienLenPlayer playerWhoPlayedLastValidCards;
-    private TienLenGameState currentTienLenGameState;
+    private GameState currentTienLenGameState;
 
-    public TienLenState() {
+    public State() {
         this.lastPlayedCards = new ArrayList<>();
         this.lastPlayer = null;
         this.passCount = 0;
@@ -24,7 +24,7 @@ public class TienLenState {
         this.winners = new ArrayList<>();
         this.currentWinnerRank = 1;
         this.playerWhoPlayedLastValidCards = null;
-        this.currentTienLenGameState = TienLenGameState.INITIALIZING;
+        this.currentTienLenGameState = GameState.INITIALIZING;
     }
 
     // Getters
@@ -35,7 +35,7 @@ public class TienLenState {
     public List<TienLenPlayer> getWinners() { return new ArrayList<>(winners); } // Trả về bản sao
     public int getCurrentWinnerRank() { return currentWinnerRank; }
     public TienLenPlayer getPlayerWhoPlayedLastValidCards() { return playerWhoPlayedLastValidCards; }
-    public TienLenGameState getCurrentTienLenGameState() { return currentTienLenGameState; }
+    public GameState getCurrentTienLenGameState() { return currentTienLenGameState; }
 
     // Setters & Modifiers
     public void setLastPlayedCards(List<Card> cards) { this.lastPlayedCards = (cards != null) ? new ArrayList<>(cards) : new ArrayList<>(); }
@@ -61,7 +61,7 @@ public class TienLenState {
     }
 
     public void setPlayerWhoPlayedLastValidCards(TienLenPlayer player) { this.playerWhoPlayedLastValidCards = player; }
-    public void setCurrentTienLenGameState(TienLenGameState currentTienLenGameState) { this.currentTienLenGameState = currentTienLenGameState; }
+    public void setCurrentTienLenGameState(GameState currentTienLenGameState) { this.currentTienLenGameState = currentTienLenGameState; }
 
     public void resetForNewGame() {
         this.lastPlayedCards.clear();
@@ -71,7 +71,7 @@ public class TienLenState {
         this.winners.clear();
         this.currentWinnerRank = 1;
         this.playerWhoPlayedLastValidCards = null;
-        this.currentTienLenGameState = TienLenGameState.INITIALIZING;
+        this.currentTienLenGameState = GameState.INITIALIZING;
     }
 
     public void resetForNewRound(TienLenPlayer roundStarter) {
@@ -80,6 +80,6 @@ public class TienLenState {
         this.passCount = 0;
         this.playerWhoPlayedLastValidCards = roundStarter;
         this.isFirstTurnOfGame = false;
-        this.currentTienLenGameState = TienLenGameState.ROUND_IN_PROGRESS;
+        this.currentTienLenGameState = GameState.ROUND_IN_PROGRESS;
     }
 }
