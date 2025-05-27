@@ -51,7 +51,9 @@ public class GreedyStrategy implements TienLenAIStrategy {
         if (!playableFours.isEmpty()) {
             // Greedy sẽ đánh tứ quý nhỏ nhất có thể để chặt
             playableFours.sort(Comparator.comparing(p -> ruleSet.getRepresentativeCardForCombination(p), ruleSet.getCardComparator()));
-            return playableFours.get(0);
+            for(int i = 0 ; i < playableFours.size(); i++) {
+            	if(!RemainingCardsValidator.checkRemainingCard(currentHand, playableFours.get(i))) return playableFours.get(i);
+            }
         }
 
         // 3. Nếu không phải lượt đầu game và không chặt đặc biệt:
