@@ -146,7 +146,7 @@ public class SamLocRule implements TienLenVariantRuleSet {
 
     @Override
     public boolean isCardValidInStraight(Card card) {
-        return true; 
+        return getTienLenValue(card) < getTwoRankValue(); 
     }
 
     @Override
@@ -168,8 +168,10 @@ public class SamLocRule implements TienLenVariantRuleSet {
 	public int getCardsPerPlayer() {
 		return 10;
 	}
-	
-	
-    
+
+	@Override
+	public Card startingCard() {
+		return null;
+	}   
     
 }

@@ -10,7 +10,7 @@ public class Card implements Comparable<Card> {
 	
 	public enum Rank {
 		THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8),
-        NINE(9), TEN(10), JACK(11), QUEEN(12), KING(13), ACE(14), TWO(15); 
+        NINE(9), TEN(10), JACK(11), QUEEN(12), KING(13), ACE(14), TWO(2); 
 	
 		private final int value;
 		Rank(int value){
@@ -21,6 +21,10 @@ public class Card implements Comparable<Card> {
 			return value;
 		}
 	}
+	
+	public enum CardColor {
+        RED, BLACK
+    }
 	
 	private final Suit suit;
 	private final Rank rank;
@@ -37,6 +41,14 @@ public class Card implements Comparable<Card> {
 	public Rank getRank() {
 		return rank;
 	}
+	
+	public CardColor getCardColor() {
+        if (this.suit == Suit.HEARTS || this.suit == Suit.DIAMONDS) {
+            return CardColor.RED;
+        } else {
+            return CardColor.BLACK;
+        }
+    }
 
 	@Override
 	public String toString() {
